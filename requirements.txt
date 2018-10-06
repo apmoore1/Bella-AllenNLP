@@ -1,0 +1,2 @@
+bella-tdsa==0.2.3
+allennlp==0.7.0

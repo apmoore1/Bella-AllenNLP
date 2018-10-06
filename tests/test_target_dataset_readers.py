@@ -3,7 +3,7 @@ from pathlib import Path
 from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
 
-from bella.dataset_readers.target_reader import TargetDatasetReader
+from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
 
 class TestTargetDatasetReader(AllenNlpTestCase):
     def test_read_from_file(self):

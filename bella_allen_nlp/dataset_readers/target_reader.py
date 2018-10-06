@@ -27,6 +27,7 @@ class TargetDatasetReader(DatasetReader):
         
     @overrides
     def _read(self, file_path):
+        print(file_path)
         with open(file_path, "r") as data_file:
             # This should be a logger
             print("Reading instances from lines in file at: "
