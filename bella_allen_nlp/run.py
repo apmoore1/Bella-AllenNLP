@@ -13,6 +13,12 @@ from tensorboardX import SummaryWriter, FileWriter
 import torch
 import torch.optim as optim
 
+import sys
+from pathlib import Path
+import os
+sys.path.insert(0, str(Path('.').resolve()))
+print(sys.path)
+
 from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
 from bella_allen_nlp.allen_models.basic_target_lstm import TargetLSTMClassifier
 
@@ -22,9 +28,9 @@ token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens_id',
                                                  lowercase_tokens=True)}
 reader = TargetDatasetReader(token_indexers=token_indexers)
 train_dataset = reader.read(cached_path(
-    '/Users/andrew/.Bella/Datasets/SemEval_2014_Resturants_Train'))
+    '/home/andrew/.Bella/Datasets/restaurants train'))
 validation_dataset = reader.read(cached_path(
-    '/Users/andrew/.Bella/Datasets/SemEval_2014_Resturants_Dev'))
+    '/home/andrew/.Bella/Datasets/restaurants dev'))
 target = train_dataset[0].fields['target']
 text = train_dataset[0].fields['text']
 label = train_dataset[0].fields['label']
@@ -48,17 +54,16 @@ HIDDEN_DIM = 50
 
 
 # Model
-glove_fp = cached_path('/Users/andrew/Desktop/glove.6B/glove.6B.50d.txt')
+glove_fp = cached_path('/home/andrew/glove.6B/glove.6B.50d.txt')
 glove_50_weights = _read_pretrained_embeddings_file(glove_fp, 50, vocab, 'tokens_id')
 
 token_embedding = Embedding(num_embeddings=vocab.get_vocab_size('tokens_id'),
                             embedding_dim=WORD_EMBEDDING_DIM,
                             weight=glove_50_weights)
-token_embedding1 = Embedding(num_embeddings=vocab.get_vocab_size('tokens_id'),
-                            embedding_dim=WORD_EMBEDDING_DIM)
+#token_embedding1 = Embedding(num_embeddings=vocab.get_vocab_size('tokens_id'),
+#                            embedding_dim=WORD_EMBEDDING_DIM)
 id_to_tokens = vocab.get_index_to_token_vocabulary(namespace='tokens_id')
 token_names = list(id_to_tokens.values())
-
 
 word_embeddings = BasicTextFieldEmbedder({"tokens": token_embedding})
 
@@ -85,16 +90,26 @@ trainer = Trainer(model=model,
                   patience=10,
                   num_epochs=40,
                   histogram_interval=100, should_log_learning_rate=True)
+
 serialization_dir = '/tmp/anything100'
-import os
+another_log = SummaryWriter(os.path.join(serialization_dir, "log", "embeddings"))
 train_log = SummaryWriter(os.path.join(serialization_dir, "log", "train"))
 validation_log = SummaryWriter(os.path.join(serialization_dir, "log", "validation"))
-another_log = SummaryWriter(os.path.join(serialization_dir, "log", "embeddings"))
-another_log.add_embedding(token_embedding.weight, metadata=token_names)
+
+
 trainer._tensorboard = TensorboardWriter(train_log=train_log, validation_log=validation_log)
 
 trainer.train()
-
+# Project the learnt word embeddings
+another_log.add_embedding(token_embedding.weight, metadata=token_names, 
+                          tag='Sentiment Embeddings')
+# Project the Original word embeddings
+original_50_weights = _read_pretrained_embeddings_file(glove_fp, 50, vocab, 'tokens_id')
+another_log.add_embedding(original_50_weights, metadata=token_names, 
+                          tag='Original Embeddings')
+train_log.close()
+validation_log.close()
+another_log.close()
 
 #predictor = SentenceTaggerPredictor(model, dataset_reader=reader)
 #tag_logits = predictor.predict("The dog ate the apple")['tag_logits']
