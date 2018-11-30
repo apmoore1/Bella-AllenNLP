@@ -64,7 +64,7 @@ class TargetLSTMClassifier(Model):
 
         encoded_text_target = torch.cat([encoded_text, encoded_target], dim=-1)
         logits = self.classifier_feedforward(encoded_text_target)
-        class_probabilities = F.softmax(logits)
+        class_probabilities = F.softmax(logits, dim=-1)
 
         output_dict = {"class_probabilities": class_probabilities}
 

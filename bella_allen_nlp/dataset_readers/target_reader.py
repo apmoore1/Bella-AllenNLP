@@ -1,5 +1,8 @@
 import json
+import logging
 from typing import Callable, Union, Dict
+
+logger = logging.getLogger(__name__)
 
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.instance import Instance
@@ -30,8 +33,8 @@ class TargetDatasetReader(DatasetReader):
         print(file_path)
         with open(file_path, "r") as data_file:
             # This should be a logger
-            print("Reading instances from lines in file at: "
-                  f"{file_path}")
+            logger.info("Reading instances from lines in file at: "
+                        f"{file_path}")
             for line in data_file:
                 line = line.strip("\n")
                 if not line:

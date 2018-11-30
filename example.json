@@ -2,36 +2,36 @@
     "dataset_reader": {
       "type": "target_dataset"
     },
-    "train_data_path": "/home/andrew/.Bella/Datasets/SemEval_2014_Resturants_Train",
-    "validation_data_path": "/home/andrew/.Bella/Datasets/SemEval_2014_Resturants_Dev",
+    "train_data_path": "/home/andrew/.Bella/Datasets/restaurants train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/restaurants dev",
     "model": {
       "type": "target_lstm_classifier",
       "text_field_embedder": {
         "tokens": {
           "type": "embedding",
-          "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
-          "embedding_dim": 300,
-          "trainable": false
+          "pretrained_file": "https://s3-us-west-2.amazonaws.com/allennlp/datasets/glove/glove.6B.100d.txt.gz",
+          "embedding_dim": 100,
+          "trainable": true
         }
       },
       "text_encoder": {
         "type": "lstm",
         "bidirectional": true,
-        "input_size": 300,
-        "hidden_size": 300,
+        "input_size": 100,
+        "hidden_size": 100,
         "num_layers": 1,
         "dropout": 0.2
       },
       "target_encoder": {
         "type": "lstm",
         "bidirectional": true,
-        "input_size": 300,
+        "input_size": 100,
         "hidden_size": 50,
         "num_layers": 1,
         "dropout": 0.2
       },
       "classifier_feedforward": {
-        "input_dim": 700,
+        "input_dim": 300,
         "num_layers": 1,
         "hidden_dims": 3,
         "activations": "linear",
@@ -50,7 +50,7 @@
       "grad_clipping": 5.0,
       "validation_metric": "+accuracy",
       "optimizer": {
-        "type": "adagrad"
+        "type": "adam"
       }
     }
   }
