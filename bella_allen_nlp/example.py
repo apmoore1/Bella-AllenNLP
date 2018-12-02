@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 import os
 sys.path.insert(0, str(Path('..').resolve()))
+import logging
 
 from allennlp.common.file_utils import cached_path
 from allennlp.data.vocabulary import Vocabulary
@@ -19,8 +20,11 @@ import torch
 import torch.optim as optim
 
 
-from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
+from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
 from bella_allen_nlp.allen_models.basic_target_lstm import TargetLSTMClassifier
+
+logging.basicConfig(format='%(message)s',
+                    level=logging.INFO)
 
 sem_dir = Path('..', '..', 'aspect datasets', 'semeval_2014')
 laptop_train = semeval_14(Path(sem_dir, 'laptop_train.xml'), name='Laptop')

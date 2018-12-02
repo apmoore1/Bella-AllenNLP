@@ -20,7 +20,7 @@ Seq2VecEncoder is an abstract method that maps tensors of shape
 (batch_size, embedding_dim)
 '''
 
-@Model.register("target_lstm_classifier")
+@Model.register("tdlstm_lstm_classifier")
 class TDLSTMClassifier(Model):
     def __init__(self,
                  vocab: Vocabulary,
@@ -36,7 +36,6 @@ class TDLSTMClassifier(Model):
         self.target_field_embedder = target_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
         self.text_encoder = text_encoder
-        self.target_encoder = target_encoder
         self.classifier_feedforward = classifier_feedforward
         self.metrics = {
                 "accuracy": CategoricalAccuracy()
@@ -45,7 +44,8 @@ class TDLSTMClassifier(Model):
         initializer(self)
 
     def forward(self,
-                text: Dict[str, torch.LongTensor],
+                left_text: Dict[str, torch.LongTensor],
+                right_text: Dict[str, torch.LongTensor],
                 target: Dict[str, torch.LongTensor],
                 label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
         '''
@@ -54,30 +54,33 @@ class TDLSTMClassifier(Model):
         etc therefore the dictionary represents these different ways e.g. 
         {'words': words_tensor_ids, 'chars': char_tensor_ids}
         '''
-        embedded_text = self.text_field_embedder(text)
-        text_mask = util.get_text_field_mask(text)
-        encoded_text = self.text_encoder(embedded_text, text_mask)
+        left_embedded_text = self.text_field_embedder(left_text)
+        right_embedded_text = self.text_field_embedder(right_text)
+        left_text_mask = util.get_text_field_mask(left_text)
+        right_text_mask = util.get_text_field_mask(right_text)
+        
+        left_encoded_text = self.text_encoder(left_embedded_text, left_text_mask)
+        right_encoded_text = self.text_encoder(right_embedded_text, right_text_mask)
 
-        if self.target_field_embedder:
-            embedded_target = self.target_field_embedder(target)
-        else:
-            embedded_target = self.text_field_embedder(target)
+        #if self.target_field_embedder:
+        #    embedded_target = self.target_field_embedder(target)
+        #else:
+        #    embedded_target = self.text_field_embedder(target)
 
-        target_mask = util.get_text_field_mask(target)
-        encoded_target = self.target_encoder(embedded_target, target_mask)
+        #target_mask = util.get_text_field_mask(target)
+        #encoded_target = self.target_encoder(embedded_target, target_mask)
 
-        encoded_text_target = torch.cat([encoded_text, encoded_target], dim=-1)
-        logits = self.classifier_feedforward(encoded_text_target)
+        encoded_left_right = torch.cat([left_encoded_text, right_encoded_text], 
+                                       dim=-1)
+        logits = self.classifier_feedforward(encoded_left_right)
         class_probabilities = F.softmax(logits, dim=-1)
 
         output_dict = {"class_probabilities": class_probabilities}
 
         if label is not None:
             loss = self.loss(logits, label)
-            #loss = self.loss(logits, label.squeeze(-1))
             for metric in self.metrics.values():
                 metric(logits, label)
-                #metric(logits, label.squeeze(-1))
             output_dict["loss"] = loss
 
         return output_dict

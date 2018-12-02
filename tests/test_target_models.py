@@ -3,7 +3,6 @@ from pathlib import Path
 from allennlp.common.testing import ModelTestCase
 
 from bella_allen_nlp.allen_models.basic_target_lstm import TargetLSTMClassifier
-from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
 
 
 class TargetLSTMClassifierTest(ModelTestCase):

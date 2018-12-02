@@ -1,1 +1,2 @@
-from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
+from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
+from bella_allen_nlp.dataset_readers.tdlstm import TDLSTMDatasetReader

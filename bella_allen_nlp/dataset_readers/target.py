@@ -2,14 +2,17 @@ import json
 import logging
 from typing import Callable, Union, Dict
 
-logger = logging.getLogger(__name__)
-
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
+from bella.contexts import context
 from overrides import overrides
+
+
+logger = logging.getLogger(__name__)
+
 
 @DatasetReader.register("target_dataset")
 class TargetDatasetReader(DatasetReader):
