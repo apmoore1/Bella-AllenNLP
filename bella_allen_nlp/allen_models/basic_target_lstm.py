@@ -20,12 +20,13 @@ Seq2VecEncoder is an abstract method that maps tensors of shape
 (batch_size, embedding_dim)
 '''
 
-@Model.register("tdlstm_lstm_classifier")
+@Model.register("tdlstm_classifier")
 class TDLSTMClassifier(Model):
     def __init__(self,
                  vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
-                 text_encoder: Seq2VecEncoder,
+                 left_text_encoder: Seq2VecEncoder,
+                 right_text_encoder: Seq2VecEncoder,
                  classifier_feedforward: FeedForward,
                  target_field_embedder: Optional[TextFieldEmbedder] = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
@@ -35,7 +36,8 @@ class TDLSTMClassifier(Model):
         self.text_field_embedder = text_field_embedder
         self.target_field_embedder = target_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
-        self.text_encoder = text_encoder
+        self.left_text_encoder = left_text_encoder
+        self.right_text_encoder = right_text_encoder
         self.classifier_feedforward = classifier_feedforward
         self.metrics = {
                 "accuracy": CategoricalAccuracy()
@@ -59,8 +61,10 @@ class TDLSTMClassifier(Model):
         left_text_mask = util.get_text_field_mask(left_text)
         right_text_mask = util.get_text_field_mask(right_text)
         
-        left_encoded_text = self.text_encoder(left_embedded_text, left_text_mask)
-        right_encoded_text = self.text_encoder(right_embedded_text, right_text_mask)
+        left_encoded_text = self.left_text_encoder(left_embedded_text, 
+                                                   left_text_mask)
+        right_encoded_text = self.right_text_encoder(right_embedded_text, 
+                                                     right_text_mask)
 
         #if self.target_field_embedder:
         #    embedded_target = self.target_field_embedder(target)
