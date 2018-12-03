@@ -11,7 +11,7 @@ from bella_allen_nlp.dataset_readers.tdlstm import TDLSTMDatasetReader
 class TestTDLSTMDatasetReader():
     @pytest.mark.parametrize("lazy", (True, False))
     @pytest.mark.parametrize("incl_target", (False, True))
-    @pytest.mark.parametrize("reverse_right_text", [True])
+    @pytest.mark.parametrize("reverse_right_text", [True, False])
     def test_read_from_file(self, lazy, incl_target, reverse_right_text):
         reader = TDLSTMDatasetReader(lazy=lazy, incl_target=incl_target,
                                      reverse_right_text=reverse_right_text)
@@ -27,7 +27,7 @@ class TestTDLSTMDatasetReader():
                                    "cramped", "quarters-", "you" ,"'ll", 
                                    "have", "fun", "and", "forgot", "about",
                                    "the", "tight"],
-                     "right_text": [".", "in", "'re", "you"],
+                     "right_text": ["you", "'re", "in", "."],
                      "target": ["spot"],
                      "sentiment": 'negative'}
         instance5 = {"left_text": ["I", "really", "recommend", "the", "very", 
@@ -36,6 +36,11 @@ class TestTDLSTMDatasetReader():
                      "target": ["Unda", "(", "Egg", ")", "rolls"],
                      "sentiment": 'positive'}
         test_instances = [instance1, instance5]
+        
+        if reverse_right_text:
+            for test_instance in test_instances:
+                test_instance['right_text'].reverse()
+
         if incl_target:
             for test_instance in test_instances:
                 target = test_instance['target']
@@ -43,9 +48,12 @@ class TestTDLSTMDatasetReader():
                 left_text += target
 
                 right_text = test_instance['right_text']
-                target_temp = copy.deepcopy(target)
-                target_temp.reverse()
-                right_text += target_temp
+                if reverse_right_text:
+                    target_temp = copy.deepcopy(target)
+                    target_temp.reverse()
+                    right_text += target_temp
+                else:
+                    right_text = target + right_text
 
                 test_instance['left_text'] = left_text
                 test_instance['right_text'] = right_text
