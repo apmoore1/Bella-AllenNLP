@@ -58,7 +58,7 @@ class TestTDLSTMDatasetReader():
                 test_instance['left_text'] = left_text
                 test_instance['right_text'] = right_text
 
-        assert len(instances) == 10
+        assert len(instances) == 11
         fields = instances[0].fields
         assert [t.text for t in fields["left_text"].tokens] == instance1["left_text"]
         assert [t.text for t in fields["right_text"].tokens] == instance1["right_text"]

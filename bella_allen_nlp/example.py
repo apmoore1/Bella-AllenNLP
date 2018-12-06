@@ -21,7 +21,7 @@ import torch.optim as optim
 
 
 from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
-from bella_allen_nlp.allen_models.basic_target_lstm import TargetLSTMClassifier
+from bella_allen_nlp.allen_models.target_lstm import TargetLSTMClassifier
 
 logging.basicConfig(format='%(message)s',
                     level=logging.INFO)
