@@ -47,6 +47,32 @@ class TDLSTMClassifier(Model):
                 "accuracy": CategoricalAccuracy()
         }
         self.loss = torch.nn.CrossEntropyLoss()
+
+        if self.target_encoder:
+            right_text_out_dim = self.right_text_encoder.get_output_dim()
+            left_text_out_dim = self.left_text_encoder.get_output_dim()
+            config_err_msg = ("As the target is being encoded the output of the 
+                              "target encoder "
+                                         "is concatenated onto each word "
+                                         "vector for the left and right "
+                                         "contexts therefore the input and "
+                                         "output of the right_text_encoder is"
+                                         " the output dimension of the target "
+                                         "encoder + the dimension of the "
+                                         "word encodings for the left and "
+                                         "right contexts.")
+            if self.classifier_feedforward.input_dim != right_text_out_dim:
+                raise ConfigurationError("As the target is being encoded "
+                                         "the output of the target encoder "
+                                         "is concatenated onto each word "
+                                         "vector for the left and right "
+                                         "contexts therefore the input and "
+                                         "output of the right_text_encoder is"
+                                         " the output dimension of the target "
+                                         "encoder + the dimension of the "
+                                         "word encodings for the left and "
+                                         "right contexts.")
+            if self.classifier_feedforward.input_dim != right_text_out_dim:
         initializer(self)
 
     def forward(self,
