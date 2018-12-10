@@ -42,7 +42,7 @@
       "type": "bucket",
       "sorting_keys": [["left_text", "num_tokens"], ["right_text", "num_tokens"]],
       "padding_noise": 0.0,
-      "batch_size": 64
+      "batch_size": 1
     },
   
     "trainer": {

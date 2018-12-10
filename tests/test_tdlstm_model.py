@@ -50,4 +50,28 @@ class TDLSTMClassifierTest(ModelTestCase):
         params["model"]["target_encoder"]["embedding_dim"] = 5
         with pytest.raises(ConfigurationError):
             Model.from_params(vocab=self.vocab, params=params.get('model'))
+
+    def test_incl_target_tdlstm(self):
+        # Test whether it can handle not including the target, the main problem 
+        # here is whether it can handle left and/or right contexts not 
+        # containing any text which is what happens in the last example for the 
+        # left context with regards to the `target_reader_data.json` data
+        param_file = self.param_file
+        params = Params.from_file(param_file).duplicate()
+        params["dataset_reader"]["incl_target"] = False
+        test_param_fp = Path(self.TEST_DIR, 'tdlstm_incl_param_file.json')
+        params.to_file(str(test_param_fp))
+        self.ensure_model_can_train_save_and_load(test_param_fp)
+    
+    def test_incl_target_tclstm(self):
+        # Test whether it can handle not including the target, the moin problem 
+        # here is whether it can handle left and/or right contexts not 
+        # containing any text which is what happens in the last example for the 
+        # left context with regards to the `target_reader_data.json` data
+        param_file = Path(self._test_dir, 'tclstm_model_config.json').resolve()
+        params = Params.from_file(param_file).duplicate()
+        params["dataset_reader"]["incl_target"] = False
+        test_param_fp = Path(self.TEST_DIR, 'tclstm_incl_param_file.json')
+        params.to_file(str(test_param_fp))
+        self.ensure_model_can_train_save_and_load(test_param_fp)
         

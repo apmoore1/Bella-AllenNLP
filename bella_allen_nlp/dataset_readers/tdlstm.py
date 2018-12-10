@@ -83,6 +83,9 @@ class TDLSTMDatasetReader(DatasetReader):
         left_text_field = TextField(left_tokenised_text, self._token_indexers)
         right_text_field = TextField(right_tokenised_text, self._token_indexers)
         target_field = TextField(tokenised_target, self._token_indexers)
+        #if left_text == '':
+        #    import pdb
+        #    pdb.set_trace()
         fields = {'left_text': left_text_field, 'right_text': right_text_field, 
                   'target': target_field}
         if sentiment is not None:

@@ -26,7 +26,7 @@ class TestTargetDatasetReader(AllenNlpTestCase):
                      "target": ["dishes"],
                      "sentiment": "neutral"}
 
-        assert len(instances) == 11
+        assert len(instances) == 12
         fields = instances[0].fields
         assert [t.text for t in fields["text"].tokens[:8]] == instance1["text"]
         assert [t.text for t in fields["target"].tokens] == instance1["target"]

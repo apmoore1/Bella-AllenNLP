@@ -13,7 +13,7 @@ from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util
-from allennlp.training.metrics import CategoricalAccuracy
+from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 
 
 @Model.register("tdlstm_classifier")
@@ -43,9 +43,17 @@ class TDLSTMClassifier(Model):
         self.right_text_encoder = right_text_encoder
         self.target_encoder = target_encoder
         self.classifier_feedforward = classifier_feedforward
+        
         self.metrics = {
                 "accuracy": CategoricalAccuracy()
         }
+        self.f1_metrics = {}
+        # F1 Scores
+        label_index_name = self.vocab.get_index_to_token_vocabulary('labels')
+        for label_index, label_name in label_index_name.items():
+            label_name = f'F1_{label_name.capitalize()}'
+            self.f1_metrics[label_name] = F1Measure(label_index)
+        
         self.loss = torch.nn.CrossEntropyLoss()
 
         if self.target_encoder:
@@ -85,6 +93,10 @@ class TDLSTMClassifier(Model):
         right_embedded_text = self.text_field_embedder(right_text)
         left_text_mask = util.get_text_field_mask(left_text)
         right_text_mask = util.get_text_field_mask(right_text)
+        #print('left')
+        #print(left_embedded_text)
+        #print('right')
+        #print(right_embedded_text)
 
         if self.target_field_embedder:
             embedded_target = self.target_field_embedder(target)
@@ -125,8 +137,13 @@ class TDLSTMClassifier(Model):
 
         if label is not None:
             loss = self.loss(logits, label)
-            for metric in self.metrics.values():
-                metric(logits, label)
+            for metrics in [self.metrics, self.f1_metrics]:
+                for metric in metrics.values():
+                    metric(logits, label)
+            #for metric in self.metrics.values():
+            #    metric(logits, label)
+            #for metric in self.f1_metrics.values():
+            #    metric(logits, label)
             output_dict["loss"] = loss
 
         return output_dict
@@ -141,5 +158,15 @@ class TDLSTMClassifier(Model):
         return output_dict
 
     def get_metrics(self, reset: bool = False) -> Dict[str, float]:
-        return {metric_name: metric.get_metric(reset) 
-                for metric_name, metric in self.metrics.items()}
+        # Other scores
+        metric_name_value = {}
+        for metric_name, metric in self.metrics.items():
+            metric_name_value[metric_name] = metric.get_metric(reset)
+        # F1 scores
+        all_f1_scores = []
+        for metric_name, metric in self.f1_metrics.items():
+            precision, recall, f1_measure = metric.get_metric(reset)
+            all_f1_scores.append(f1_measure)
+            metric_name_value[metric_name] = f1_measure
+        metric_name_value['Macro_F1'] = sum(all_f1_scores) / len(self.f1_metrics)
+        return metric_name_value

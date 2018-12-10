@@ -35,7 +35,12 @@ class TestTDLSTMDatasetReader():
                      "right_text": ["."],
                      "target": ["Unda", "(", "Egg", ")", "rolls"],
                      "sentiment": 'positive'}
-        test_instances = [instance1, instance5]
+        instance12 = {"left_text": [],
+                      "target": ["lava", "cake", "dessert"], 
+                      "right_text": ["was", "incredible", "and", "I", 
+                                     "recommend", "it", "."],
+                      "sentiment": "positive"}
+        test_instances = [instance1, instance5, instance12]
         
         if reverse_right_text:
             for test_instance in test_instances:
@@ -58,7 +63,7 @@ class TestTDLSTMDatasetReader():
                 test_instance['left_text'] = left_text
                 test_instance['right_text'] = right_text
 
-        assert len(instances) == 11
+        assert len(instances) == 12
         fields = instances[0].fields
         assert [t.text for t in fields["left_text"].tokens] == instance1["left_text"]
         assert [t.text for t in fields["right_text"].tokens] == instance1["right_text"]
@@ -69,3 +74,8 @@ class TestTDLSTMDatasetReader():
         assert [t.text for t in fields["right_text"].tokens] == instance5["right_text"]
         assert [t.text for t in fields["target"].tokens] == instance5["target"]
         assert fields["label"].label == instance5["sentiment"]
+        fields = instances[11].fields
+        assert [t.text for t in fields["left_text"].tokens] == instance12["left_text"]
+        assert [t.text for t in fields["right_text"].tokens] == instance12["right_text"]
+        assert [t.text for t in fields["target"].tokens] == instance12["target"]
+        assert fields["label"].label == instance12["sentiment"]

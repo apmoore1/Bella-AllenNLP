@@ -26,17 +26,19 @@ from bella_allen_nlp.allen_models.target_lstm import TargetLSTMClassifier
 logging.basicConfig(format='%(message)s',
                     level=logging.INFO)
 
-sem_dir = Path('..', '..', 'aspect datasets', 'semeval_2014')
+sem_dir = Path('..', 'aspect datasets', 'semeval_2014')
 laptop_train = semeval_14(Path(sem_dir, 'laptop_train.xml'), name='Laptop')
 rest_train = semeval_14(Path(sem_dir, 'restaurants_train.xml'), 
-                        name='Restaurant')
-rest_fps = rest_train.to_json_file(['Restaurant Train', 'Restaurant Dev'], 0.2, 
-                                   random_state=42)
+                        name='Restaurant Train')
+rest_test = semeval_14(Path(sem_dir, 'restaurants_train.xml'), 
+                       name='Restaurant Test')
+rest_train_fps = rest_train.to_json_file(['Restaurant Train', 'Restaurant Dev'], 0.2, 
+                                         random_state=42)
+rest_test_fp = rest_test.to_json_file('Restaurant Test')
 laptop_fps = laptop_train.to_json_file(['Laptop Train', 'Laptop Dev'], 0.2, 
                                        random_state=42)
-rest_train_fp, rest_dev_fp = rest_fps
+rest_train_fp, rest_dev_fp = rest_train_fps
 laptop_train_fp, laptop_dev_fp = laptop_fps
-
 
 token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens_id', 
                                                  lowercase_tokens=True)}

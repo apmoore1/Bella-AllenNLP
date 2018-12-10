@@ -1,0 +1,66 @@
+{
+    "dataset_reader": {
+      "type": "tdlstm_dataset",
+      "incl_target": false
+    },
+    "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Dev",
+    "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
+    "evaluate_on_test": true,
+    "model": {
+      "type": "tdlstm_classifier",
+      "text_field_embedder": {
+        "token_embedders": {
+            "tokens": {
+                "type": "embedding",
+                "embedding_dim": 5,
+                "trainable": false
+            }
+            
+        }
+      },
+      "left_text_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 10,
+        "hidden_size": 10,
+        "num_layers": 1,
+        "dropout": 0.2
+      },
+      "right_text_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 10,
+        "hidden_size": 10,
+        "num_layers": 1,
+        "dropout": 0.2
+      },
+      "target_encoder": {
+        "type": "boe",
+        "embedding_dim": 5,
+        "averaged": true
+      },
+      "classifier_feedforward": {
+        "input_dim": 20,
+        "num_layers": 1,
+        "hidden_dims": 3,
+        "activations": ["linear"]
+      }
+    },
+    "iterator": {
+      "type": "bucket",
+      "sorting_keys": [["left_text", "num_tokens"], ["right_text", "num_tokens"]],
+      "padding_noise": 0.0,
+      "batch_size": 2
+    },
+  
+    "trainer": {
+      "num_epochs": 10,
+      "patience": 3,
+      "cuda_device": 0,
+      "grad_clipping": 5.0,
+      "optimizer": {
+        "type": "adam"
+      }
+    }
+  }
