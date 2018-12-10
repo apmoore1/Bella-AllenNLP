@@ -30,10 +30,24 @@ class TDLSTMClassifierTest(ModelTestCase):
         self.ensure_batch_predictions_are_consistent()
 
     def test_tclstm_version(self):
-        #with pytest.raises(ConfigurationError):
-        with pytest.raises(RuntimeError):
-            tclstm_param_fp = Path(self._test_dir, 'tclstm_model_config.json').resolve()
-            #params = Params.from_file(tclstm_param_fp)
-            #Model.from_params(vocab=self.vocab, params=params.get('model'))
-            
-            self.ensure_model_can_train_save_and_load(tclstm_param_fp)
+        # Test the normal case
+        tclstm_param_fp = Path(self._test_dir, 'tclstm_model_config.json').resolve()
+        self.ensure_model_can_train_save_and_load(tclstm_param_fp)
+        # Test that an error raises if the left text encoder does not have an 
+        # input dimension that is equal to the context text word embeddings + 
+        # the output dimension of the target encoder.
+        params = Params.from_file(tclstm_param_fp)
+        params["model"]["left_text_encoder"]["embedding_dim"] = 10
+        with pytest.raises(ConfigurationError):
+            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        # Test the right text encoder
+        params = Params.from_file(tclstm_param_fp)
+        params["model"]["right_text_encoder"]["embedding_dim"] = 10
+        with pytest.raises(ConfigurationError):
+            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        # Test the target encoder
+        params = Params.from_file(tclstm_param_fp)
+        params["model"]["target_encoder"]["embedding_dim"] = 5
+        with pytest.raises(ConfigurationError):
+            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        

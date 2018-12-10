@@ -49,30 +49,25 @@ class TDLSTMClassifier(Model):
         self.loss = torch.nn.CrossEntropyLoss()
 
         if self.target_encoder:
-            right_text_out_dim = self.right_text_encoder.get_output_dim()
-            left_text_out_dim = self.left_text_encoder.get_output_dim()
-            config_err_msg = ("As the target is being encoded the output of the 
-                              "target encoder "
-                                         "is concatenated onto each word "
-                                         "vector for the left and right "
-                                         "contexts therefore the input and "
-                                         "output of the right_text_encoder is"
-                                         " the output dimension of the target "
-                                         "encoder + the dimension of the "
-                                         "word encodings for the left and "
-                                         "right contexts.")
-            if self.classifier_feedforward.input_dim != right_text_out_dim:
-                raise ConfigurationError("As the target is being encoded "
-                                         "the output of the target encoder "
-                                         "is concatenated onto each word "
-                                         "vector for the left and right "
-                                         "contexts therefore the input and "
-                                         "output of the right_text_encoder is"
-                                         " the output dimension of the target "
-                                         "encoder + the dimension of the "
-                                         "word encodings for the left and "
-                                         "right contexts.")
-            if self.classifier_feedforward.input_dim != right_text_out_dim:
+            right_text_out_dim = self.right_text_encoder.get_input_dim()
+            left_text_out_dim = self.left_text_encoder.get_input_dim()
+
+            target_dim = self.target_encoder.get_output_dim()
+            text_dim = self.text_field_embedder.get_output_dim()
+            total_out_dim = target_dim + text_dim
+            config_err_msg = ("As the target is being encoded the output of the" 
+                              " target encoder is concatenated onto each word "
+                              " vector for the left and right contexts " 
+                              "therefore the input of the right_text_encoder"
+                              "/left_text_encoder is the output dimension of "
+                              "the target encoder + the dimension of the word "
+                              "embeddings for the left and right contexts.")
+            
+            if (total_out_dim != right_text_out_dim or 
+                total_out_dim != left_text_out_dim):
+                raise ConfigurationError(config_err_msg)
+            #if :
+            #    raise ConfigurationError(config_err_msg)
         initializer(self)
 
     def forward(self,
