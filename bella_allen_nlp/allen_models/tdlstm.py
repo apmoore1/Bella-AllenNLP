@@ -74,8 +74,6 @@ class TDLSTMClassifier(Model):
             if (total_out_dim != right_text_out_dim or 
                 total_out_dim != left_text_out_dim):
                 raise ConfigurationError(config_err_msg)
-            #if :
-            #    raise ConfigurationError(config_err_msg)
         initializer(self)
 
     def forward(self,
@@ -93,10 +91,6 @@ class TDLSTMClassifier(Model):
         right_embedded_text = self.text_field_embedder(right_text)
         left_text_mask = util.get_text_field_mask(left_text)
         right_text_mask = util.get_text_field_mask(right_text)
-        #print('left')
-        #print(left_embedded_text)
-        #print('right')
-        #print(right_embedded_text)
 
         if self.target_field_embedder:
             embedded_target = self.target_field_embedder(target)
@@ -108,7 +102,7 @@ class TDLSTMClassifier(Model):
                                                       target_text_mask)
             # Encoded target to be of dimension (batch, words, dim) currently
             # (batch, dim)
-            target_encoded_text = target_encoded_text.unsqueeze(1)#.repeat((1,37,1))
+            target_encoded_text = target_encoded_text.unsqueeze(1)
 
             # Need to repeat the target word for each word in the left 
             # and right word.
