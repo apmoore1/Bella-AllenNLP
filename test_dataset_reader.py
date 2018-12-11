@@ -29,14 +29,13 @@ from bella_allen_nlp.allen_models.tdlstm import TDLSTMClassifier
 
 #token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens_id'),
 #                  'chars': TokenCharactersIndexer(namespace='char_id')}
-token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens_id', 
+token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens', 
                                                  lowercase_tokens=True)}
 reader = TDLSTMDatasetReader(token_indexers=token_indexers, incl_target=False)
 data = str(Path('tests', 'test_data', 'target_reader_data.json').resolve())
 train_dataset = reader.read(cached_path(data))
 
 vocab = Vocabulary().from_instances(train_dataset)
-vocab._token_to_index['tokens'] = vocab._token_to_index['tokens_id']
 #target = train_dataset[0].fields['target']
 #text = train_dataset[0].fields['text']
 #label = train_dataset[0].fields['label']
@@ -55,7 +54,13 @@ params = Params.from_file(param_fp).duplicate()
 #pdb.set_trace()
 model = Model.from_params(vocab=vocab, params=params['model'])
 
-#a=model(left_text=tensors['left_text'],target=tensors['target'],right_text=tensors['right_text'])
+#a=model(**tensor_dict)
+t_end = train_dataset[-1]
+batch_alt = Batch([t_end])
+batch_alt.index_instances(vocab)
+padding_lengths_alt = batch_alt.get_padding_lengths()
+tensor_dict_alt = batch_alt.as_tensor_dict(padding_lengths_alt)
+a = model(**tensor_dict_alt)
 import pdb
 pdb.set_trace()
 
