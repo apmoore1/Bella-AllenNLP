@@ -1,10 +1,10 @@
 import json
 import logging
-from typing import Callable, Union, Dict
+from typing import Callable, Union, Dict, List
 
 from allennlp.data.fields import LabelField, TextField
 from allennlp.data.instance import Instance
-from allennlp.data.tokenizers import Tokenizer, WordTokenizer
+from allennlp.data.tokenizers import Tokenizer, WordTokenizer, Token
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from bella.contexts import context
@@ -80,12 +80,17 @@ class TDLSTMDatasetReader(DatasetReader):
         if self.reverse_right_text:
             right_tokenised_text.reverse()
         tokenised_target = self._tokenizer.tokenize(target)
+        # If one of the right or left contexts are empty then to avoid having 
+        # an empty tensor dict when converting the instances from 
+        # batches/datasets add the padding token which is 0
+        if left_text.strip() == '':
+            left_tokenised_text: List[Token] = [Token(text_id=0)]
+        if right_text.strip() == '':
+            right_tokenised_text: List[Token] = [Token(text_id=0)]
         left_text_field = TextField(left_tokenised_text, self._token_indexers)
         right_text_field = TextField(right_tokenised_text, self._token_indexers)
         target_field = TextField(tokenised_target, self._token_indexers)
-        #if left_text == '':
-        #    import pdb
-        #    pdb.set_trace()
+
         fields = {'left_text': left_text_field, 'right_text': right_text_field, 
                   'target': target_field}
         if sentiment is not None:
