@@ -82,14 +82,15 @@ class TDLSTMDatasetReader(DatasetReader):
         tokenised_target = self._tokenizer.tokenize(target)
         # If one of the right or left contexts are empty then to avoid having 
         # an empty tensor dict when converting the instances from 
-        # batches/datasets add the padding token which is 0
+        # batches/datasets add an unknown token
         if left_text.strip() == '':
-            left_tokenised_text: List[Token] = [Token(text_id=0)]
+            left_tokenised_text: List[Token] = [Token("@@EMPTY_SENTENCE@@")]
         if right_text.strip() == '':
-            right_tokenised_text: List[Token] = [Token(text_id=0)]
+            right_tokenised_text: List[Token] = [Token("@@EMPTY_SENTENCE@@")]
         left_text_field = TextField(left_tokenised_text, self._token_indexers)
         right_text_field = TextField(right_tokenised_text, self._token_indexers)
         target_field = TextField(tokenised_target, self._token_indexers)
+
 
         fields = {'left_text': left_text_field, 'right_text': right_text_field, 
                   'target': target_field}

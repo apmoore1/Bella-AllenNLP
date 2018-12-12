@@ -48,7 +48,7 @@ padding_lengths = batch.get_padding_lengths()
 tensor_dict = batch.as_tensor_dict(padding_lengths)
 
 
-param_fp = str(Path('tests', 'test_data', 'tclstm_model_config.json').resolve())
+param_fp = str(Path('tests', 'test_data', 'tclstm_lstm_model_config.json').resolve())
 params = Params.from_file(param_fp).duplicate()
 #import pdb
 #pdb.set_trace()
@@ -56,9 +56,12 @@ model = Model.from_params(vocab=vocab, params=params['model'])
 
 #a=model(**tensor_dict)
 t_end = train_dataset[-1]
-batch_alt = Batch([t_end])
+batch_alt = Batch([t_end,t_end])
 batch_alt.index_instances(vocab)
 padding_lengths_alt = batch_alt.get_padding_lengths()
+#b= {'left_text': {'tokens_length': 4, 'num_tokens': 4}, 'right_text': {'tokens_length': 7, 'num_tokens': 7}, 'target': {'tokens_length': 3, 'num_tokens': 3}}
+#import pdb
+#pdb.set_trace()
 tensor_dict_alt = batch_alt.as_tensor_dict(padding_lengths_alt)
 a = model(**tensor_dict_alt)
 import pdb

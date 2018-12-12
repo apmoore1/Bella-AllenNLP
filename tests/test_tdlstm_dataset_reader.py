@@ -38,7 +38,7 @@ class TestTDLSTMDatasetReader():
         # Left text in this case is empty but an empty string is represented as 
         # the padding token which is Token(text_int=0) which has no text 
         # representation thus it is equal to None
-        instance12 = {"left_text": [None],
+        instance12 = {"left_text": ["@@EMPTY_SENTENCE@@"],
                       "target": ["lava", "cake", "dessert"], 
                       "right_text": ["was", "incredible", "and", "I", 
                                      "recommend", "it", "."],
@@ -54,7 +54,7 @@ class TestTDLSTMDatasetReader():
                 target = test_instance['target']
                 left_text = test_instance['left_text']
                 # Handle the None case
-                if left_text == [None]:
+                if left_text == ["@@EMPTY_SENTENCE@@"]:
                     left_text = []
                 left_text += target
 
