@@ -18,19 +18,21 @@ Seq2VecEncoder is an abstract method that maps tensors of shape
 '''
 
 
-@Model.register("target_lstm_classifier")
-class TargetLSTMClassifier(Model):
+@Model.register("target_classifier")
+class TargetClassifier(Model):
     def __init__(self,
                  vocab: Vocabulary,
                  text_field_embedder: TextFieldEmbedder,
                  text_encoder: Seq2VecEncoder,
                  classifier_feedforward: FeedForward,
+                 target_field_embedder: Optional[TextFieldEmbedder] = None,
                  target_encoder: Optional[Seq2VecEncoder] = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None) -> None:
         super().__init__(vocab, regularizer)
 
         self.text_field_embedder = text_field_embedder
+        self.target_field_embedder = target_field_embedder
         self.num_classes = self.vocab.get_vocab_size("labels")
         self.text_encoder = text_encoder
         self.target_encoder = target_encoder
@@ -39,6 +41,31 @@ class TargetLSTMClassifier(Model):
                 "accuracy": CategoricalAccuracy()
         }
         self.f1_metrics = {}
+
+        # Ensure that when the target encoder is used the input dim to the 
+        # feedforward layer is expecting the right dimension. Easy to forget to 
+        # add the text encoder out and the target encoder out
+        if self.target_encoder is not None:
+            feed_input_dim = self.classifier_feedforward.get_input_dim()
+            target_out = self.target_encoder.get_output_dim()
+            text_out = self.text_encoder.get_output_dim()
+
+            config_err_msg = ("The input dim to the feedforward layer " 
+                              f"{feed_input_dim} has to be the sum of the "
+                              f"output of the target encoder {target_out} + "
+                              f"the text encoder {text_out}")
+            if feed_input_dim != (target_out + text_out):
+                raise ConfigurationError(config_err_msg)
+
+            if self.target_field_embedder is not None:
+                target_embed_out = self.target_field_embedder.get_output_dim()
+                target_in = self.target_encoder.get_input_dim()
+                config_embed_err_msg = ("The Target field embedder should have"
+                                        " the same output size "
+                                        f"{target_embed_out} as the input to "
+                                        f"the target encoder {target_in}")
+                if target_embed_out != target_in:
+                    raise ConfigurationError(config_embed_err_msg)
         # F1 Scores
         label_index_name = self.vocab.get_index_to_token_vocabulary('labels')
         for label_index, label_name in label_index_name.items():
@@ -63,7 +90,10 @@ class TargetLSTMClassifier(Model):
         encoded_text = self.text_encoder(embedded_text, text_mask)
 
         if self.target_encoder:
-            embedded_target = self.text_field_embedder(target)
+            if self.target_field_embedder:
+                embedded_target = self.target_field_embedder(target)
+            else:
+                embedded_target = self.text_field_embedder(target)
             target_mask = util.get_text_field_mask(target)
             encoded_target = self.target_encoder(embedded_target, target_mask)
             encoded_text = torch.cat([encoded_text, encoded_target], dim=-1)
