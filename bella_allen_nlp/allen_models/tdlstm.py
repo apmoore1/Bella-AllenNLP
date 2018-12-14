@@ -1,19 +1,15 @@
 from typing import Dict, Optional
 
-import numpy
-from overrides import overrides
-import torch
-import torch.nn.functional as F
-
-from allennlp.common import Params
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
-from allennlp.modules.seq2vec_encoders import BagOfEmbeddingsEncoder
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util
 from allennlp.training.metrics import CategoricalAccuracy, F1Measure
+import numpy
+import torch
+import torch.nn.functional as F
 
 
 @Model.register("tdlstm_classifier")

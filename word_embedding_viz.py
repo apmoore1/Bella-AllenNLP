@@ -17,10 +17,9 @@ import sys
 from pathlib import Path
 import os
 sys.path.insert(0, str(Path('.').resolve()))
-print(sys.path)
 
-from bella_allen_nlp.dataset_readers.target_reader import TargetDatasetReader
-from bella_allen_nlp.allen_models.basic_target_lstm import TargetLSTMClassifier
+from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
+from bella_allen_nlp.allen_models.target_lstm import TargetLSTMClassifier
 
 #token_indexers = {'tokens': SingleIdTokenIndexer(namespace='tokens_id'),
 #                  'chars': TokenCharactersIndexer(namespace='char_id')}
