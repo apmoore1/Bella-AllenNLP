@@ -1,0 +1,61 @@
+{
+    "dataset_reader": {
+      "type": "target_dataset"
+    },
+    "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Dev",
+    "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
+    "evaluate_on_test": true,
+    "model": {
+      "type": "target_lstm_classifier",
+      "text_field_embedder": {
+        "token_embedders": {
+            "tokens": {
+                "type": "embedding",
+                "embedding_dim": 300,
+                "pretrained_file": "/home/andrew/glove.6B/glove.840B.300d.txt",
+                "trainable": true
+            }
+            
+        }
+      },
+      "text_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 300,
+        "hidden_size": 300,
+        "num_layers": 1
+      },
+      "target_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 300,
+        "hidden_size": 300,
+        "num_layers": 1
+      },
+      "classifier_feedforward": {
+        "input_dim": 600,
+        "num_layers": 1,
+        "hidden_dims": 3,
+        "activations": ["linear"]
+      }
+    },
+    "iterator": {
+      "type": "bucket",
+      "sorting_keys": [["text", "num_tokens"]],
+      "padding_noise": 0.1,
+      "batch_size": 32
+    },
+  
+    "trainer": {
+      "num_epochs": 100,
+      "patience": 3,
+      "cuda_device": -1,
+      "shuffle": true,
+      "grad_clipping": 5.0,
+      "optimizer": {
+        "type": "adam",
+        "lr": 0.001
+      }
+    }
+  }
