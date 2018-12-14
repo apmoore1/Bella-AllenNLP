@@ -10,3 +10,4 @@
 {"spans": [[54, 60]], "target": "PRICES", "text": "INCREDIBLY POOR SERVICE AN FOOD QUALITY AT EXORBITANT PRICES.", "sentiment": -1, "sentence_id": "restaurants_train937", "target_id": "restaurants_train9372"}
 {"spans": [[4, 21]], "target": "lava cake dessert", "text": "The lava cake dessert was incredible and I recommend it.", "sentiment": 1, "sentence_id": "restaurants_train3316", "target_id": "restaurants_train33160"}
 {"spans": [[0, 17]], "target": "lava cake dessert", "text": "lava cake dessert was incredible and I recommend it.", "sentiment": 1, "sentence_id": "made_", "target_id": "made_up"}
+{"spans": [[54, 60]], "target": "PRICES", "text": "INCREDIBLY POOR SERVICE AN FOOD QUALITY AT EXORBITANT PRICES", "sentiment": -1, "sentence_id": "made1_", "target_id": "made1_up"}
