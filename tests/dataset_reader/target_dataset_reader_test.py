@@ -8,7 +8,8 @@ from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
 class TestTargetDatasetReader(AllenNlpTestCase):
     def test_read_from_file(self):
         reader = TargetDatasetReader()
-        test_fp = Path(__file__, '..', 'test_data', 'target_reader_data.json')
+        test_fp = Path(__file__, '..', '..', 'test_data', 
+                       'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
 
         instance1 = {"text": ["Though", "you", "will", "undoubtedly", "be", 

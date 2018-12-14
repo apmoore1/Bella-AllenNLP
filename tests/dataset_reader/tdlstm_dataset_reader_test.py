@@ -15,7 +15,8 @@ class TestTDLSTMDatasetReader():
     def test_read_from_file(self, lazy, incl_target, reverse_right_text):
         reader = TDLSTMDatasetReader(lazy=lazy, incl_target=incl_target,
                                      reverse_right_text=reverse_right_text)
-        test_fp = Path(__file__, '..', 'test_data', 'target_reader_data.json')
+        test_fp = Path(__file__, '..', '..', 'test_data', 
+                       'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
 
         instance1 = {"left_text": ["Though", "you", "will", "undoubtedly", "be", 

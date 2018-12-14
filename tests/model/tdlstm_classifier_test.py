@@ -13,7 +13,7 @@ class TDLSTMClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
         #self.TESTS_ROOT = Path(__file__, '..')
-        self._test_dir = Path(__file__, '..', 'test_data')
+        self._test_dir = Path(__file__, '..', '..', 'test_data')
         test_data_fp = str(Path(self._test_dir, 
                                 'target_reader_data.json').resolve())
         test_config_fp = str(Path(self._test_dir, 

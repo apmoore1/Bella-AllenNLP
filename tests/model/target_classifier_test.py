@@ -8,7 +8,7 @@ class TargetLSTMClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
         #self.TESTS_ROOT = Path(__file__, '..')
-        test_dir = Path(__file__, '..', 'test_data')
+        test_dir = Path(__file__, '..', '..', 'test_data')
         test_data_fp = str(Path(test_dir, 'target_reader_data.json').resolve())
         test_config_fp = str(Path(test_dir, 'target_model_config.json').resolve())
 
