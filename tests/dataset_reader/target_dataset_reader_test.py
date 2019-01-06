@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from allennlp.common.testing import AllenNlpTestCase
 from allennlp.common.util import ensure_list
+import pytest
 
 from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
 
-class TestTargetDatasetReader(AllenNlpTestCase):
-    def test_read_from_file(self):
-        reader = TargetDatasetReader()
+class TestTargetDatasetReader():
+    @pytest.mark.parametrize("lazy", (True, False))
+    def test_read_from_file(self, lazy):
+        reader = TargetDatasetReader(lazy=lazy)
         test_fp = Path(__file__, '..', '..', 'test_data', 
                        'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
