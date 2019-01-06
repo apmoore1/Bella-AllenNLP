@@ -12,7 +12,7 @@ from allennlp.common.checks import ConfigurationError
 class TDLSTMClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
-        #self.TESTS_ROOT = Path(__file__, '..')
+
         self._test_dir = Path(__file__, '..', '..', 'test_data')
         test_data_fp = str(Path(self._test_dir, 
                                 'target_reader_data.json').resolve())
@@ -64,7 +64,7 @@ class TDLSTMClassifierTest(ModelTestCase):
         self.ensure_model_can_train_save_and_load(test_param_fp)
     
     def test_incl_target_tclstm(self):
-        # Test whether it can handle not including the target, the moin problem 
+        # Test whether it can handle not including the target, the main problem 
         # here is whether it can handle left and/or right contexts not 
         # containing any text which is what happens in the last example for the 
         # left context with regards to the `target_reader_data.json` data
