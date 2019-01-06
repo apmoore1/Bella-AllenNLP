@@ -10,7 +10,6 @@ import pytest
 class TargetClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
-        #self.TESTS_ROOT = Path(__file__, '..')
         test_dir = Path(__file__, '..', '..', 'test_data')
         test_data_fp = str(Path(test_dir, 'target_reader_data.json').resolve())
         test_config_fp = str(Path(test_dir, 'target_model_config.json').resolve())
@@ -26,9 +25,7 @@ class TargetClassifierTest(ModelTestCase):
         self.ensure_batch_predictions_are_consistent()
 
     def test_without_target(self):
-        # Test that an error raises if the left text encoder does not have an 
-        # input dimension that is equal to the context text word embeddings + 
-        # the output dimension of the target encoder.
+        # Test that the model works when the target is not encoded.
         params = Params.from_file(self.param_file)
         params["model"].pop("target_encoder")
         params["model"]['classifier_feedforward']['input_dim'] = 2
@@ -59,17 +56,35 @@ class TargetClassifierTest(ModelTestCase):
 
     def test_target_embedding(self):
         '''
-        Ensure that the target embedding is the same as the text embedding when 
-        None and different when it is specified to be a different embedding
+        Tests that an error occurs if the Target embedding dimension does 
+        not match that of the input to the target encoder.
         '''
         params = Params.from_file(self.param_file).duplicate()
         params['model']['target_encoder']['embedding_dim'] = 4
         params['model']['classifier_feedforward']['input_dim'] = 6
         with pytest.raises(ConfigurationError):
             Model.from_params(vocab=self.vocab, params=params.get('model'))
-        
         params = Params.from_file(self.param_file).duplicate()
+        params['model']['target_encoder']['embedding_dim'] = 4
+        params['model']['classifier_feedforward']['input_dim'] = 6
         params['model']['target_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
-        with pytest.raises(ConfigurationError):
-            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        test_param_fp = Path(self.TEST_DIR, 'different_target_text_embedding.json')
+        params.to_file(str(test_param_fp))
+        self.ensure_model_can_train_save_and_load(test_param_fp)
+    
+    def test_without_target_embedding(self):
+        '''
+        Ensures that the model can run with the target enocder but without 
+        the target embedding.
+        '''
+        params = Params.from_file(self.param_file).duplicate()
+        params['model'].pop("target_field_embedder")
+        params['model']['text_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
+        params['model']['target_encoder']['embedding_dim'] = 4
+        params['model']['text_encoder']['embedding_dim'] = 4
+        params['model']['classifier_feedforward']['input_dim'] = 8
+        
+        test_param_fp = Path(self.TEST_DIR, 'only_text_embedding.json')
+        params.to_file(str(test_param_fp))
+        self.ensure_model_can_train_save_and_load(test_param_fp)
 
