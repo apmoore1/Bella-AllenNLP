@@ -12,12 +12,18 @@ class TestTDLSTMDatasetReader():
     @pytest.mark.parametrize("lazy", (True, False))
     @pytest.mark.parametrize("incl_target", (False, True))
     @pytest.mark.parametrize("reverse_right_text", [True, False])
-    def test_read_from_file(self, lazy, incl_target, reverse_right_text):
+    @pytest.mark.parametrize("sentiment_mapper", [None, {-1: 'Neg', 0: 'Neu', 
+                                                         1: 'Pos'}])
+    def test_read_from_file(self, lazy, incl_target, reverse_right_text, 
+                            sentiment_mapper):
         reader = TDLSTMDatasetReader(lazy=lazy, incl_target=incl_target,
-                                     reverse_right_text=reverse_right_text)
+                                     reverse_right_text=reverse_right_text,
+                                     sentiment_mapper=sentiment_mapper)
         test_fp = Path(__file__, '..', '..', 'test_data', 
                        'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
+        if sentiment_mapper is None:
+            sentiment_mapper = {-1: 'negative', 0: 'neutral', 1: 'positive'}
 
         instance1 = {"left_text": ["Though", "you", "will", "undoubtedly", "be", 
                                    "seated", "at", "a", "table", "with", "what", 
@@ -30,12 +36,12 @@ class TestTDLSTMDatasetReader():
                                    "the", "tight"],
                      "right_text": ["you", "'re", "in", "."],
                      "target": ["spot"],
-                     "sentiment": 'negative'}
+                     "sentiment": sentiment_mapper[-1]}
         instance5 = {"left_text": ["I", "really", "recommend", "the", "very", 
                                    "simple"],
                      "right_text": ["."],
                      "target": ["Unda", "(", "Egg", ")", "rolls"],
-                     "sentiment": 'positive'}
+                     "sentiment": sentiment_mapper[1]}
         # Left text in this case is empty but an empty string is represented as 
         # the @@EMPTY_SENTENCE@@ token. However when the target is included 
         # this token should not exist
@@ -43,13 +49,13 @@ class TestTDLSTMDatasetReader():
                       "target": ["lava", "cake", "dessert"], 
                       "right_text": ["was", "incredible", "and", "I", 
                                      "recommend", "it", "."],
-                      "sentiment": "positive"}
+                      "sentiment": sentiment_mapper[1]}
         # Same as the left context but for the right.
         instance13 = {"left_text": ["INCREDIBLY", "POOR", "SERVICE", "AN", 
                                     "FOOD", "QUALITY", "AT", "EXORBITANT"],
                       "target": ["PRICES"],
                       "right_text": ["@@EMPTY_SENTENCE@@"],
-                      "sentiment": "negative"}
+                      "sentiment": sentiment_mapper[-1]}
         test_instances = [instance1, instance5, instance12, instance13]
         
         if reverse_right_text:
