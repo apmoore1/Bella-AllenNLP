@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from allennlp.common.checks import ConfigurationError
 from allennlp.data import Vocabulary
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
+from allennlp.modules import InputVariationalDropout
 from allennlp.models.model import Model
 from allennlp.nn import InitializerApplicator, RegularizerApplicator
 from allennlp.nn import util
@@ -10,6 +11,7 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 import numpy
 import torch
 import torch.nn.functional as F
+from torch.nn.modules import Dropout, Dropout2d, Linear
 
 
 @Model.register("tdlstm_classifier")
@@ -19,17 +21,56 @@ class TDLSTMClassifier(Model):
                  text_field_embedder: TextFieldEmbedder,
                  left_text_encoder: Seq2VecEncoder,
                  right_text_encoder: Seq2VecEncoder,
-                 classifier_feedforward: FeedForward,
+                 feedforward: Optional[FeedForward] = None,
                  target_field_embedder: Optional[TextFieldEmbedder] = None,
                  target_encoder: Optional[Seq2VecEncoder] = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
-                 regularizer: Optional[RegularizerApplicator] = None) -> None:
+                 regularizer: Optional[RegularizerApplicator] = None,
+                 word_dropout: float = 0.0,
+                 dropout: float = 0.0) -> None:
         super().__init__(vocab, regularizer)
         '''
-        Having a target encoder converts this model into the original TCLSTM 
-        model if the target encoder is the averaged Bag Of Embeddings Encoder.
-        The encoded target will be concaenated to each word in the left and 
-        right context before the right and left contexts are encoded.
+        :param vocab: vocab : A Vocabulary, required in order to compute sizes 
+                              for input/output projections.
+        :param text_field_embedder: Used to embed the text and target text if
+                                    target_field_embedder is None but the 
+                                    target_encoder is not None.
+        :param left_text_encoder: Encoder that will create the representation 
+                                  of the tokens left of the target and  
+                                  the target itself if included from the 
+                                  dataset reader.
+        :param right_text_encoder: Encoder that will create the representation 
+                                   of the tokens right of the target and the 
+                                   target itself if included from the 
+                                   dataset reader.
+        :param feedforward: An optional feed forward layer to apply after the 
+                            encoder.
+        :param target_field_embedder: Used to embed the target text to give as 
+                                      input to the target_encoder. Thus this 
+                                      allows a seperate embedding for text and 
+                                      target text.
+        :param target_encoder: Encoder that will create the representation of 
+                               target text tokens.
+        :param initializer: Used to initialize the model parameters.
+        :param regularizer: If provided, will be used to calculate the 
+                            regularization penalty during training.
+        :param word_dropout: Dropout that is applied after the embedding of the 
+                             tokens/words. It will drop entire words with this 
+                             probabilty.
+        :param dropout: To apply dropout after each layer apart from the last 
+                        layer. All dropout that is applied to timebased data 
+                        will be `variational dropout`_ all else will be  
+                        standard dropout.
+        
+        Without the target encoder this will be the standard TDLSTM method 
+        from `Effective LSTM's for Target-Dependent Sentiment classification`_
+        . With the target encoder this will then become the TCLSTM method 
+        from `Effective LSTM's for Target-Dependent Sentiment classification`_.
+
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
+        .. _Effective LSTM's for Target-Dependent Sentiment classification:
+           https://aclanthology.coli.uni-saarland.de/papers/C16-1311/c16-1311
         '''
 
         self.text_field_embedder = text_field_embedder
@@ -38,7 +79,15 @@ class TDLSTMClassifier(Model):
         self.left_text_encoder = left_text_encoder
         self.right_text_encoder = right_text_encoder
         self.target_encoder = target_encoder
-        self.classifier_feedforward = classifier_feedforward
+        self.feedforward = feedforward
+
+        if feedforward is not None:
+            output_dim = self.feedforward.get_output_dim()
+        else:
+            left_out_dim = self.left_text_encoder.get_output_dim()
+            right_out_dim = self.right_text_encoder.get_output_dim()
+            output_dim = left_out_dim + right_out_dim
+        self.label_projection = Linear(output_dim, self.num_classes)
         
         self.metrics = {
                 "accuracy": CategoricalAccuracy()
@@ -49,9 +98,16 @@ class TDLSTMClassifier(Model):
         for label_index, label_name in label_index_name.items():
             label_name = f'F1_{label_name.capitalize()}'
             self.f1_metrics[label_name] = F1Measure(label_index)
+        # Dropout
+        self._word_dropout = Dropout2d(word_dropout)
+        self._variational_dropout = InputVariationalDropout(dropout)
+        self._naive_dropout = Dropout(dropout)
         
         self.loss = torch.nn.CrossEntropyLoss()
 
+        # Ensure that the input to the right_text_encoder and left_text_encoder
+        # is the size of the target encoder output plus the size of the text 
+        # embedding output.
         if self.target_encoder:
             right_text_out_dim = self.right_text_encoder.get_input_dim()
             left_text_out_dim = self.left_text_encoder.get_input_dim()
@@ -70,7 +126,39 @@ class TDLSTMClassifier(Model):
             if (total_out_dim != right_text_out_dim or 
                 total_out_dim != left_text_out_dim):
                 raise ConfigurationError(config_err_msg)
+        # Ensure that the target field embedder has an output dimension the 
+        # same as the input dimension to the target encoder.
+        if self.target_encoder and self.target_field_embedder:
+            target_embed_out = self.target_field_embedder.get_output_dim()
+            target_in = self.target_encoder.get_input_dim()
+            config_embed_err_msg = ("The Target field embedder should have"
+                                    " the same output size "
+                                    f"{target_embed_out} as the input to "
+                                    f"the target encoder {target_in}")
+            if target_embed_out != target_in:
+                raise ConfigurationError(config_embed_err_msg)
+
         initializer(self)
+
+    def _token_dropout(self, embedded_text: torch.FloatTensor
+                      ) -> torch.FloatTensor:
+        '''
+        Dropout will randomly drop whole words.
+
+        This is equivalent to `1D Spatial Dropout`_. 
+        
+        .. _1D Spatial 
+           Dropout:https://keras.io/layers/core/#spatialdropout1d 
+
+        :param embedded_text: A tensor of shape: 
+                              [batch_size, timestep, embedding_dim] of which 
+                              the dropout will drop entire timestep which is 
+                              the equivalent to words.
+        :returns: The given tensor but with timesteps/words dropped.
+        '''
+        embedded_text = embedded_text.unsqueeze(2)
+        embedded_text = self._word_dropout(embedded_text)
+        return embedded_text.squeeze(2)
 
     def forward(self,
                 left_text: Dict[str, torch.LongTensor],
@@ -84,18 +172,27 @@ class TDLSTMClassifier(Model):
         {'words': words_tensor_ids, 'chars': char_tensor_ids}
         '''
         left_embedded_text = self.text_field_embedder(left_text)
-        right_embedded_text = self.text_field_embedder(right_text)
+        left_embedded_text = self._token_dropout(left_embedded_text)
+        left_embedded_text = self._variational_dropout(left_embedded_text)
         left_text_mask = util.get_text_field_mask(left_text)
-        right_text_mask = util.get_text_field_mask(right_text)
 
-        if self.target_field_embedder:
-            embedded_target = self.target_field_embedder(target)
-        else:
-            embedded_target = self.text_field_embedder(target)
+        right_embedded_text = self.text_field_embedder(right_text)
+        right_embedded_text = self._token_dropout(right_embedded_text)
+        right_embedded_text = self._variational_dropout(right_embedded_text)
+        right_text_mask = util.get_text_field_mask(right_text)
+        
         if self.target_encoder:
+            if self.target_field_embedder:
+                embedded_target = self.target_field_embedder(target)
+            else:
+                embedded_target = self.text_field_embedder(target)
+            embedded_target = self._token_dropout(embedded_target)
+            embedded_target = self._variational_dropout(embedded_target)
             target_text_mask = util.get_text_field_mask(target)
+
             target_encoded_text = self.target_encoder(embedded_target, 
                                                       target_text_mask)
+            target_encoded_text = self._naive_dropout(target_encoded_text)
             # Encoded target to be of dimension (batch, words, dim) currently
             # (batch, dim)
             target_encoded_text = target_encoded_text.unsqueeze(1)
@@ -114,13 +211,18 @@ class TDLSTMClassifier(Model):
         
         left_encoded_text = self.left_text_encoder(left_embedded_text, 
                                                    left_text_mask)
+        left_encoded_text = self._naive_dropout(left_encoded_text)
+
         right_encoded_text = self.right_text_encoder(right_embedded_text, 
                                                      right_text_mask)
+        right_encoded_text = self._naive_dropout(right_encoded_text)
 
 
         encoded_left_right = torch.cat([left_encoded_text, right_encoded_text], 
                                        dim=-1)
-        logits = self.classifier_feedforward(encoded_left_right)
+        if self.feedforward:
+            encoded_left_right = self.feedforward(encoded_left_right)
+        logits = self.label_projection(encoded_left_right)
         class_probabilities = F.softmax(logits, dim=-1)
 
         output_dict = {"class_probabilities": class_probabilities}
@@ -130,10 +232,6 @@ class TDLSTMClassifier(Model):
             for metrics in [self.metrics, self.f1_metrics]:
                 for metric in metrics.values():
                     metric(logits, label)
-            #for metric in self.metrics.values():
-            #    metric(logits, label)
-            #for metric in self.f1_metrics.values():
-            #    metric(logits, label)
             output_dict["loss"] = loss
 
         return output_dict

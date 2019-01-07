@@ -28,31 +28,9 @@ class TargetClassifierTest(ModelTestCase):
         # Test that the model works when the target is not encoded.
         params = Params.from_file(self.param_file)
         params["model"].pop("target_encoder")
-        params["model"]['classifier_feedforward']['input_dim'] = 2
         test_param_fp = Path(self.TEST_DIR, 'without_target_param_file.json')
         params.to_file(str(test_param_fp))
         self.ensure_model_can_train_save_and_load(test_param_fp)
-    
-    def test_text_target_feed_dims(self):
-        '''
-        Tests the case when the target and text encoder output dim is different 
-        when summed to that of the input feedforward classifier
-        '''
-        params = Params.from_file(self.param_file).duplicate()
-        params["model"]["target_encoder"]["embedding_dim"] = 3
-        with pytest.raises(ConfigurationError):
-            Model.from_params(vocab=self.vocab, params=params.get('model'))
-        
-        params = Params.from_file(self.param_file).duplicate()
-        params["model"]["text_encoder"]["embedding_dim"] = 3
-        with pytest.raises(ConfigurationError):
-            Model.from_params(vocab=self.vocab, params=params.get('model'))
-        
-        params = Params.from_file(self.param_file).duplicate()
-        params["model"]["target_encoder"]["embedding_dim"] = 3
-        params["model"]["text_encoder"]["embedding_dim"] = 3
-        with pytest.raises(ConfigurationError):
-            Model.from_params(vocab=self.vocab, params=params.get('model'))
 
     def test_target_embedding(self):
         '''
@@ -61,12 +39,10 @@ class TargetClassifierTest(ModelTestCase):
         '''
         params = Params.from_file(self.param_file).duplicate()
         params['model']['target_encoder']['embedding_dim'] = 4
-        params['model']['classifier_feedforward']['input_dim'] = 6
         with pytest.raises(ConfigurationError):
             Model.from_params(vocab=self.vocab, params=params.get('model'))
         params = Params.from_file(self.param_file).duplicate()
         params['model']['target_encoder']['embedding_dim'] = 4
-        params['model']['classifier_feedforward']['input_dim'] = 6
         params['model']['target_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
         test_param_fp = Path(self.TEST_DIR, 'different_target_text_embedding.json')
         params.to_file(str(test_param_fp))
@@ -82,7 +58,6 @@ class TargetClassifierTest(ModelTestCase):
         params['model']['text_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
         params['model']['target_encoder']['embedding_dim'] = 4
         params['model']['text_encoder']['embedding_dim'] = 4
-        params['model']['classifier_feedforward']['input_dim'] = 8
         
         test_param_fp = Path(self.TEST_DIR, 'only_text_embedding.json')
         params.to_file(str(test_param_fp))

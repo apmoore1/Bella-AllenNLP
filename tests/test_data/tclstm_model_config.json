@@ -29,13 +29,6 @@
         "type": "boe",
         "embedding_dim": 10,
         "averaged": true
-      },
-      "classifier_feedforward": {
-        "input_dim": 40,
-        "num_layers": 2,
-        "hidden_dims": [2, 3],
-        "activations": ["sigmoid", "linear"],
-        "dropout": [0.2, 0.0]
       }
     },
     "iterator": {
