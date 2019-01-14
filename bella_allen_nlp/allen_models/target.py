@@ -96,11 +96,13 @@ class TargetClassifier(Model):
 
         self.loss = torch.nn.CrossEntropyLoss()
         
-        # Ensure that the target field embedder has an output dimension the 
-        # same as the input dimension to the target encoder.
+        # Ensure that the dimensions of the text field embedder and text encoder
+        # match
         check_dimensions_match(text_field_embedder.get_output_dim(), 
                                text_encoder.get_input_dim(),
                                "text field embedding dim", "text encoder input dim")
+        # Ensure that the dimensions of the target or text field embedder and 
+        # the target encoder match
         target_field_embedder_dim = text_field_embedder.get_output_dim()
         target_field_error = "text field embedding dim"
         if self.target_field_embedder:
