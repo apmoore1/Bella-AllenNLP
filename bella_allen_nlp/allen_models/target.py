@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from allennlp.common.checks import ConfigurationError
+from allennlp.common.checks import ConfigurationError, check_dimensions_match
 from allennlp.data import Vocabulary
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.modules import InputVariationalDropout
@@ -98,15 +98,18 @@ class TargetClassifier(Model):
         
         # Ensure that the target field embedder has an output dimension the 
         # same as the input dimension to the target encoder.
-        if self.target_encoder and self.target_field_embedder:
-            target_embed_out = self.target_field_embedder.get_output_dim()
-            target_in = self.target_encoder.get_input_dim()
-            config_embed_err_msg = ("The Target field embedder should have"
-                                    " the same output size "
-                                    f"{target_embed_out} as the input to "
-                                    f"the target encoder {target_in}")
-            if target_embed_out != target_in:
-                raise ConfigurationError(config_embed_err_msg)
+        check_dimensions_match(text_field_embedder.get_output_dim(), 
+                               text_encoder.get_input_dim(),
+                               "text field embedding dim", "text encoder input dim")
+        target_field_embedder_dim = text_field_embedder.get_output_dim()
+        target_field_error = "text field embedding dim"
+        if self.target_field_embedder:
+            target_field_embedder_dim = target_field_embedder.get_output_dim()
+            target_field_error = "target field embedding dim"
+        if self.target_encoder:
+            check_dimensions_match(target_field_embedder_dim, 
+                                   target_encoder.get_input_dim(),
+                                   target_field_error, "target encoder input dim")
         initializer(self)
 
     def _token_dropout(self, embedded_text: torch.FloatTensor

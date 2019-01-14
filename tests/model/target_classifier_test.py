@@ -48,18 +48,34 @@ class TargetClassifierTest(ModelTestCase):
         params.to_file(str(test_param_fp))
         self.ensure_model_can_train_save_and_load(test_param_fp)
     
-    def test_without_target_embedding(self):
+    def test_text_embedding_and_target_encoder(self):
         '''
-        Ensures that the model can run with the target enocder but without 
-        the target embedding.
+        Tests that an error occurs if the Text embedding that is used for the 
+        target encoder is not the same dimension
         '''
         params = Params.from_file(self.param_file).duplicate()
-        params['model'].pop("target_field_embedder")
-        params['model']['text_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
+        params['model'].pop('target_field_embedder')
         params['model']['target_encoder']['embedding_dim'] = 4
-        params['model']['text_encoder']['embedding_dim'] = 4
-        
-        test_param_fp = Path(self.TEST_DIR, 'only_text_embedding.json')
+        with pytest.raises(ConfigurationError):
+            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        params = Params.from_file(self.param_file).duplicate()
+        params['model'].pop('target_field_embedder')
+        test_param_fp = Path(self.TEST_DIR, 'no_target_embedding.json')
+        params.to_file(str(test_param_fp))
+        self.ensure_model_can_train_save_and_load(test_param_fp)
+    
+    def test_text_embedding_and_text_encoder(self):
+        '''
+        Tests that an error occurs if the Text embedding has a different 
+        dimension to the text encoder.
+        '''
+        params = Params.from_file(self.param_file).duplicate()
+        params['model']['text_field_embedder']['token_embedders']['tokens']['embedding_dim'] = 4
+        with pytest.raises(ConfigurationError):
+            Model.from_params(vocab=self.vocab, params=params.get('model'))
+        params = Params.from_file(self.param_file).duplicate()
+        params['model'].pop('target_encoder')
+        test_param_fp = Path(self.TEST_DIR, 'no_target_encoder.json')
         params.to_file(str(test_param_fp))
         self.ensure_model_can_train_save_and_load(test_param_fp)
 
