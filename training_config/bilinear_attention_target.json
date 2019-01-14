@@ -7,7 +7,7 @@
     "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
     "evaluate_on_test": true,
     "model": {
-      "type": "attention_target_classifier",
+      "type": "bilinear_attention_target_classifier",
       "text_field_embedder": {
         "token_embedders": {
             "tokens": {
@@ -32,9 +32,9 @@
         "embedding_dim": 300,
         "averaged": true
       },
-      "dropout": 0.0,
+      "dropout": 0.5,
       "word_dropout": 0.0,
-      "variational_dropout": 0.0
+      "variational_dropout": 0.5
     },
     "iterator": {
       "type": "bucket",
@@ -50,7 +50,7 @@
       "shuffle": true,
       "grad_clipping": 5.0,
       "optimizer": {
-        "type": "adam",
+        "type": "rmsprop",
         "lr": 0.001
       }
     }
