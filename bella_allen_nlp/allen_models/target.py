@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from allennlp.common.checks import ConfigurationError, check_dimensions_match
+from allennlp.common.checks import check_dimensions_match
 from allennlp.data import Vocabulary
 from allennlp.modules import FeedForward, Seq2VecEncoder, TextFieldEmbedder
 from allennlp.modules import InputVariationalDropout
