@@ -203,8 +203,6 @@ class AttentionTargetClassifier(Model):
         #embedded_text = self._token_dropout(embedded_text)
         text_mask = util.get_text_field_mask(text)
         
-
-
         # Encoded target to be of dimension (batch, words, dim) currently
         # (batch, dim), this is so that we can concat the target and encoded 
         # text
@@ -220,14 +218,15 @@ class AttentionTargetClassifier(Model):
 
         # Encode text sequence
         encoded_text_seq = self.text_encoder(embedded_text, text_mask)
+        #
         # get the last sequence (final hidden states) of the encoded text
-        index_of_last_sequence = text_mask.sum(1) - 1
-        batch_size, seq_len = text_mask.shape
-        index_multi_batch = (torch.arange(0, batch_size) * seq_len) + index_of_last_sequence
-        flattened_encoded_text_seq = encoded_text_seq.view(batch_size * seq_len, -1)
-        encoded_text_final_states = torch.index_select(flattened_encoded_text_seq, 
-                                                       0, index_multi_batch)
-        encoded_text_final_states = self._naive_dropout(encoded_text_final_states)
+        #index_of_last_sequence = text_mask.sum(1) - 1
+        #batch_size, seq_len = text_mask.shape
+        #index_multi_batch = (torch.arange(0, batch_size) * seq_len) + index_of_last_sequence
+        #flattened_encoded_text_seq = encoded_text_seq.view(batch_size * seq_len, -1)
+        #encoded_text_final_states = torch.index_select(flattened_encoded_text_seq, 
+        #                                               0, index_multi_batch)
+        #encoded_text_final_states = self._naive_dropout(encoded_text_final_states)
 
         # Join the encoded text and targets together
         target_encoded_text = torch.cat((encoded_text_seq, encoded_targets), -1)
@@ -236,6 +235,7 @@ class AttentionTargetClassifier(Model):
         # Target and text infusion layer
         infused_target_encoded_text = self.encoded_target_text_fusion(target_encoded_text)
         infused_target_encoded_text = torch.tanh(infused_target_encoded_text)
+        infused_target_encoded_text = self._variational_dropout(infused_target_encoded_text)
         # Attention based on a context vector which is to find the most informative 
         batch_size = text_mask.shape[0]
         attention_vector = self.attention_vector.unsqueeze(0).expand(batch_size, -1)
