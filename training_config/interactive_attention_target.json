@@ -1,9 +1,15 @@
 {
   "dataset_reader": {
-    "type": "target_dataset"
+    "type": "target_dataset",
+    "token_indexers": {
+      "tokens": {
+          "type": "single_id",
+          "lowercase_tokens": true
+      }
+    }
   },
   "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
-  "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Dev",
+  "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Val",
   "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
   "evaluate_on_test": true,
   "model": {
@@ -13,10 +19,19 @@
           "tokens": {
               "type": "embedding",
               "embedding_dim": 300,
-              "pretrained_file": "/home/andrew/glove.6B/glove.840B.300d.txt",
+              "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
               "trainable": true
           }
-          
+      }
+    },
+    "target_field_embedder": {
+      "token_embedders": {
+          "tokens": {
+              "type": "embedding",
+              "embedding_dim": 300,
+              "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
+              "trainable": true
+          }
       }
     },
     "text_encoder": {
@@ -35,6 +50,7 @@
       "num_layers": 1,
       "dropout": 0.0
     },
+    "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
     "dropout": 0.5,
     "word_dropout": 0.0,
     "variational_dropout": 0.5
@@ -47,14 +63,14 @@
   },
 
   "trainer": {
-    "num_epochs": 100,
-    "patience": 5,
-    "cuda_device": -1,
+    "num_epochs": 200,
+    "patience": 20,
+    "cuda_device": 0,
     "shuffle": true,
-    "grad_clipping": 5.0,
     "optimizer": {
-      "type": "rmsprop",
-      "lr": 0.001
+      "type": "sgd",
+      "lr": 0.01,
+      "momentum": 0.9
     }
   }
 }
