@@ -40,19 +40,22 @@ class InteractiveAttentionTargetClassifier(Model):
         :param text_encoder: Sequence Encoder that will create the 
                              representation of each token in the context 
                              sentence.
-        :param target_encoder: Encoder that will create the representation of 
-                               target text tokens.
+        :param target_encoder: Sequence Encoder that will create the 
+                               representation of each token in the target 
+                               word(s).
         :param feedforward: An optional feed forward layer to apply after
-                            either the text encoder if target encoder is None. 
-                            Else it would be after the target and the text 
-                            encoded representations have been concatenated.
-        :param target_field_embedder: Used to embed the target text to give as 
-                                      input to the target_encoder. Thus this 
-                                      allows a seperate embedding for text and 
-                                      target text.
+                            the weighted context and target vectors have been 
+                            concatenated.
+        :param target_field_embedder: Optional. Used to embed the target text 
+                                      to give as input to the `target_encoder`. 
+                                      Thus this allows a seperate embedding for 
+                                      context text and target text.
         :param attention_activation_function: The name of the activation 
                                               function applied after the 
-                                              ``x^T W y + b`` calculation.
+                                              ``x^T W y + b`` calculation. The 
+                                              same activation function will be 
+                                              used for both the context and 
+                                              target attention layer.
                                               Activation names can be found 
                                               `here <https://allenai.github.io/
                                               allennlp-docs/api/allennlp.nn.
@@ -68,21 +71,21 @@ class InteractiveAttentionTargetClassifier(Model):
         :param variational_dropout: Dropout that is applied after a layer that 
                                     outputs a sequence of vectors. In this case 
                                     this is applied after the embedding layer 
-                                    and the encoding of the text. This will 
-                                    apply the same dropout mask to each 
-                                    timestep compared to standard dropout 
+                                    and the encoding of the text and target. 
+                                    This will apply the same dropout mask to 
+                                    each timestep compared to standard dropout 
                                     which would use a different dropout mask 
                                     for each timestep. Specify here the 
                                     probability of dropout.
         :param dropout: Standard dropout, applied to any output vector which 
-                        is after the target encoding and the attention layer.
-                        Specify here the probability of dropout.
+                        is after the weighted context and target vectors have 
+                        been concatenated. Specify here the probability of 
+                        dropout.
         
-        This attention target classifier is based on the model in `Exploiting  
-        Document Knowledge for Aspect-level Sentiment Classification Ruidan 
-        <https://aclanthology.info/papers/P18-2092/p18-2092>`_ where the 
-        attention on the encoded context words are based on the encoded target 
-        vector.
+        This is based on the `Interactive Attention Networks for Aspect-Level 
+        Sentiment Classification 
+        <https://www.ijcai.org/proceedings/2017/0568.pdf>`_. The model is also 
+        known as `IAN`.
         '''
         super().__init__(vocab, regularizer)
 
