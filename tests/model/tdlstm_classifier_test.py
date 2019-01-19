@@ -15,9 +15,9 @@ class TDLSTMClassifierTest(ModelTestCase):
         super().setUp()
 
         self._test_dir = Path(__file__, '..', '..', 'test_data')
-        test_data_fp = str(Path(self._test_dir, 
+        test_data_fp = str(Path(self._test_dir, 'data',
                                 'target_reader_data.json').resolve())
-        test_config_fp = str(Path(self._test_dir, 
+        test_config_fp = str(Path(self._test_dir, 'model_configs',
                                   'tdlstm_model_config.json').resolve())
 
         self.set_up_model(test_config_fp,
@@ -32,7 +32,7 @@ class TDLSTMClassifierTest(ModelTestCase):
 
     def test_tclstm_version(self):
         # Test the normal case
-        tclstm_param_fp = Path(self._test_dir, 'tclstm_model_config.json').resolve()
+        tclstm_param_fp = Path(self._test_dir, 'model_configs', 'tclstm_model_config.json').resolve()
         self.ensure_model_can_train_save_and_load(tclstm_param_fp)
         # Test that an error raises if the left text encoder does not have an 
         # input dimension that is equal to the context text word embeddings + 
@@ -69,7 +69,7 @@ class TDLSTMClassifierTest(ModelTestCase):
         # here is whether it can handle left and/or right contexts not 
         # containing any text which is what happens in the last example for the 
         # left context with regards to the `target_reader_data.json` data
-        param_file = Path(self._test_dir, 'tclstm_model_config.json').resolve()
+        param_file = Path(self._test_dir, 'model_configs', 'tclstm_model_config.json').resolve()
         params = Params.from_file(param_file).duplicate()
         params["dataset_reader"]["incl_target"] = False
         test_param_fp = Path(self.TEST_DIR, 'tclstm_incl_param_file.json')
@@ -79,7 +79,7 @@ class TDLSTMClassifierTest(ModelTestCase):
     def test_target_field_embedder(self):
         # Test that can handle having a target embedder as well as a text
         # embedder
-        param_file = Path(self._test_dir, 'tclstm_model_config.json').resolve()
+        param_file = Path(self._test_dir, 'model_configs', 'tclstm_model_config.json').resolve()
         params = Params.from_file(param_file).duplicate()
         target_embedder = {"token_embedders": {"tokens": {"type": "embedding",
                                                           "embedding_dim": 15,

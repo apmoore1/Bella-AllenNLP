@@ -19,9 +19,9 @@ class AttentionTargetClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
         test_dir = Path(__file__, '..', '..', 'test_data')
-        test_data_fp = str(Path(test_dir, 'target_reader_data.json').resolve())
-        atae_config_fp = str(Path(test_dir, 'atae_target_model_config.json').resolve())
-        at_config_fp = str(Path(test_dir, 'at_target_model_config.json').resolve())
+        test_data_fp = str(Path(test_dir, 'data', 'target_reader_data.json').resolve())
+        atae_config_fp = str(Path(test_dir, 'model_configs', 'atae_target_model_config.json').resolve())
+        at_config_fp = str(Path(test_dir, 'model_configs', 'at_target_model_config.json').resolve())
         self.param_files = [atae_config_fp, at_config_fp]
 
         self.set_up_model(atae_config_fp,

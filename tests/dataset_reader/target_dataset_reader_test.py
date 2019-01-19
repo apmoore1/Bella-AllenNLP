@@ -14,7 +14,7 @@ class TestTargetDatasetReader():
                                      sentiment_mapper=sentiment_mapper)
         if sentiment_mapper is None:
             sentiment_mapper = {-1: 'negative', 0: 'neutral', 1: 'positive'}
-        test_fp = Path(__file__, '..', '..', 'test_data', 
+        test_fp = Path(__file__, '..', '..', 'test_data', 'data', 
                        'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
 

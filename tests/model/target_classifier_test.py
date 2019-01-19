@@ -11,8 +11,8 @@ class TargetClassifierTest(ModelTestCase):
     def setUp(self):
         super().setUp()
         test_dir = Path(__file__, '..', '..', 'test_data')
-        test_data_fp = str(Path(test_dir, 'target_reader_data.json').resolve())
-        test_config_fp = str(Path(test_dir, 'target_model_config.json').resolve())
+        test_data_fp = str(Path(test_dir, 'data', 'target_reader_data.json').resolve())
+        test_config_fp = str(Path(test_dir, 'model_configs', 'target_model_config.json').resolve())
 
         self.set_up_model(test_config_fp,
                           test_data_fp)

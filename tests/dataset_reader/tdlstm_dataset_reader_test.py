@@ -19,7 +19,7 @@ class TestTDLSTMDatasetReader():
         reader = TDLSTMDatasetReader(lazy=lazy, incl_target=incl_target,
                                      reverse_right_text=reverse_right_text,
                                      sentiment_mapper=sentiment_mapper)
-        test_fp = Path(__file__, '..', '..', 'test_data', 
+        test_fp = Path(__file__, '..', '..', 'test_data', 'data',
                        'target_reader_data.json')
         instances = ensure_list(reader.read(str(test_fp.resolve())))
         if sentiment_mapper is None:
