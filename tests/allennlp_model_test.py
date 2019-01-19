@@ -14,7 +14,7 @@ class TestAllenNLPModel():
 
     
     test_dir = Path(__file__, '..', 'test_data')
-    test_data_fp = Path(test_dir, 'target_collection_test_data.xml')
+    test_data_fp = Path(test_dir, 'data', 'target_collection_test_data.xml')
     TARGET_DATA = semeval_14(test_data_fp, name='test data')
 
     def test_repr_test(self):

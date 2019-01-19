@@ -1,3 +1,4 @@
+from typing import Optional
 import json
 import tempfile
 from pathlib import Path
@@ -19,7 +20,8 @@ class AllenNLPModel():
         self.name = name
         self._fitted = False
 
-    def fit(self, train_data: TargetCollection, val_data: TargetCollection
+    def fit(self, train_data: TargetCollection, val_data: TargetCollection,
+            test_data: Optional[TargetCollection] = None
             ) -> None:
         train_data.to_json_file()
 
