@@ -1,0 +1,48 @@
+{
+    "dataset_reader": {
+      "type": "tdlstm_dataset",
+      "incl_target": true
+    },
+    "train_data_path": "tests/test_data/data/target_reader_data.json",
+    "validation_data_path": "tests/test_data/data/target_reader_data.json",
+    "test_data_path": "tests/test_data/data/target_reader_data.json",
+    "evaluate_on_test": true,
+    "model": {
+      "type": "tdlstm_classifier",
+      "text_field_embedder": {
+        "token_embedders": {
+          "tokens": {
+            "type": "embedding",
+            "embedding_dim": 2,
+            "trainable": false
+          }
+        }
+      },
+      "left_text_encoder": {
+        "type": "boe",
+        "embedding_dim": 2,
+        "averaged": true
+      },
+      "right_text_encoder": {
+        "type": "boe",
+        "embedding_dim": 2,
+        "averaged": true
+      }
+    },
+    "iterator": {
+      "type": "bucket",
+      "sorting_keys": [["left_text", "num_tokens"], ["right_text", "num_tokens"]],
+      "padding_noise": 0.0,
+      "batch_size": 64
+    },
+  
+    "trainer": {
+      "num_epochs": 1,
+      "cuda_device": -1,
+      "grad_clipping": 5.0,
+      "validation_metric": "+accuracy",
+      "optimizer": {
+        "type": "adagrad"
+      }
+    }
+  }
