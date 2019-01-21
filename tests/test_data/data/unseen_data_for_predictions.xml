@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<sentences>
+    <sentence id="2339">
+        <text>I loved everythig including the actors.</text>
+        <aspectTerms>
+            <aspectTerm term="actors" polarity="positive" from="32" to="38"/>
+        </aspectTerms>
+    </sentence>
+    <sentence id="812">
+        <text>The seats are horrible.</text>
+        <aspectTerms>
+            <aspectTerm term="seats" polarity="negative" from="4" to="9"/>
+        </aspectTerms>
+    </sentence>
+</sentences>

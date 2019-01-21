@@ -5,6 +5,7 @@ from allennlp.common.util import ensure_list
 from allennlp.common.params import Params
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from bella.parsers import semeval_14
+import numpy as np
 import pytest
 from flaky import flaky
 
@@ -19,13 +20,19 @@ class TestAllenNLPModel():
     
     train_data_fp = Path(test_dir, 'data', 'target_collection_train_data.xml')
     test_data_fp = Path(test_dir, 'data', 'target_collection_test_data.xml')
+    unseen_data_fp = Path(test_dir, 'data', 'unseen_data_for_predictions.xml')
     
     TARGET_DATA = semeval_14(test_data_fp, name='test data')
     TARGET_TRAIN_DATA = semeval_14(train_data_fp, name='train data')
+    UNSEEN_DATA = semeval_14(unseen_data_fp, name='unseen')
     
     test_model_dir = Path(test_dir, 'model_configs')
     MODEL_TARGET_FP = Path(test_model_dir, 'test_target_model_config.json')
     MODEL_TDLSTM_FP = Path(test_model_dir, 'test_tdlstm_model_config.json')
+
+    model_dir = Path(test_dir, 'saved_models')
+    SAVED_TARGET_MODEL = Path(model_dir, 'target_model')
+    SAVED_TDLSTM_MODEL = Path(model_dir, 'tdlstm_model')
 
     def test_repr_test(self):
         model = AllenNLPModel('ML', self.MODEL_TARGET_FP)
@@ -39,18 +46,43 @@ class TestAllenNLPModel():
         model.fitted = True
         assert model.fitted
 
+    @flaky
+    @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
+                                               SAVED_TARGET_MODEL),
+                                              (MODEL_TDLSTM_FP, 
+                                               SAVED_TDLSTM_MODEL)])
+    def test_predict(self, target_model):
+        data = self.UNSEEN_DATA
+
+        model_config, model_path = target_model
+        model = AllenNLPModel('ML', model_config, model_path.resolve())
+        with pytest.raises(Exception):
+            model.predict(data)
+        model.load()
+        labels = model.labels
+        predictions = model.predict(data)
+        correct_predictions = ['positive', 'negative']
+        correct_predictions_matrix = np.zeros((2,3))
+        for sample_index, correct_prediction in enumerate(correct_predictions):
+            prediction_index = labels.index(correct_prediction)
+            correct_predictions_matrix[sample_index][prediction_index] = 1
+        assert np.array_equal(correct_predictions_matrix, predictions)
+
     @pytest.mark.parametrize("test_data", (True, False))
     def test_fit(self, test_data):
+        true_labels = sorted(['positive', 'negative', 'neutral'])
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_save_dir_fp = Path(temp_dir, 'test save dir')
             model = AllenNLPModel('ML', self.MODEL_TARGET_FP, temp_save_dir_fp)
             assert not model.fitted
+            assert not model.labels
             if test_data:
                 model.fit(self.TARGET_TRAIN_DATA, self.TARGET_TRAIN_DATA, 
                           self.TARGET_DATA)
             else:
                 model.fit(self.TARGET_TRAIN_DATA, self.TARGET_TRAIN_DATA)
             assert model.fitted
+            assert true_labels == sorted(model.labels)
             assert temp_save_dir_fp.is_dir()
             token_index = model.model.vocab.get_token_to_index_vocabulary('tokens')
             if test_data:
@@ -60,6 +92,7 @@ class TestAllenNLPModel():
 
     @pytest.mark.parametrize("test_data", (True, False))
     def test_load(self, test_data):
+        true_labels = sorted(['positive', 'negative', 'neutral'])
         # Testing that an error is raised when there is no save directory
         model = AllenNLPModel('ML', self.MODEL_TARGET_FP)
         with pytest.raises(Exception):
@@ -78,19 +111,32 @@ class TestAllenNLPModel():
                 temp_save_dir_fp.mkdir()
                 model.load()
             temp_save_dir_fp.rmdir()
+            assert not model.model
+            assert not model.labels
             if test_data:
                 model.fit(self.TARGET_TRAIN_DATA, self.TARGET_TRAIN_DATA, 
                           self.TARGET_DATA)
             else:
                 model.fit(self.TARGET_TRAIN_DATA, self.TARGET_TRAIN_DATA)
+            assert model.model
+            assert true_labels == sorted(model.labels)
             archived_model = model.load()
-            archived_model = archived_model.model
             token_index = archived_model.vocab.get_token_to_index_vocabulary('tokens')
             assert len(token_index) > 10
             if test_data:
                 assert 'Tais' in list(token_index.keys())
             else:
                 assert 'Tais' not in list(token_index.keys())
+        # Testing when we have a model that is at the save directory without 
+        # having to fit the model first.
+        model = AllenNLPModel('ML', self.MODEL_TARGET_FP, 
+                              self.SAVED_TARGET_MODEL.resolve())
+        assert not model.model
+        assert not model.labels
+        model.load()
+        assert model.model
+        assert true_labels == sorted(model.labels)
+
 
         
 
@@ -147,7 +193,7 @@ class TestAllenNLPModel():
         fields_to_remove = ['train_data_path', 'validation_data_path', 
                             'test_data_path', 'evaluate_on_test']
         
-        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP)
+        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP.resolve())
         for field in fields_to_remove:
             assert field not in model_params
 
@@ -156,7 +202,7 @@ class TestAllenNLPModel():
             assert field in model_params
 
     def test_add_dataset_paths(self):
-        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP)
+        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP.resolve())
         train_path = Path(self.test_data_fp, 'train_data')
         val_path = Path(self.test_data_fp, 'val_data')
         AllenNLPModel._add_dataset_paths(model_params, train_path, val_path)
@@ -165,7 +211,7 @@ class TestAllenNLPModel():
         with pytest.raises(KeyError):
             model_params['test_data_path']
         
-        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP)
+        model_params = AllenNLPModel._preprocess_and_load_param_file(self.MODEL_TARGET_FP.resolve())
         test_path = Path(self.test_data_fp, 'test_data')
         AllenNLPModel._add_dataset_paths(model_params, train_path, val_path, test_path)
         assert str(train_path.resolve()) == model_params['train_data_path']

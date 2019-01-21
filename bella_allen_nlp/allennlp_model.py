@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 import json
 import tempfile
 from pathlib import Path
@@ -11,13 +11,16 @@ from allennlp.data.vocabulary import Vocabulary
 from allennlp.models import Model
 from allennlp.models.archival import load_archive
 from bella.data_types import TargetCollection
+import numpy as np
+
+from bella_allen_nlp.predictors.target_predictor import TargetPredictor
 
 class AllenNLPModel():
     '''
     This creates a wrapper for all of the Allen NLP models that will be 
     compatible closely with the bella.models.base.BaseModel interface
 
-    To predict I might have to implement a predictor.
+    I think what needs to be created is a predictor.
     '''
 
     def __init__(self, name: str, model_param_fp: Path, 
@@ -35,7 +38,8 @@ class AllenNLPModel():
         self.model = None
         self.save_dir = save_dir
         self._fitted = False
-        self._param_fp = model_param_fp
+        self._param_fp = model_param_fp.resolve()
+        self.labels = None
 
     def fit(self, train_data: TargetCollection, val_data: TargetCollection,
             test_data: Optional[TargetCollection] = None) -> None:
@@ -78,7 +82,42 @@ class AllenNLPModel():
             model_params.to_file(temp_param_fp.resolve())
             trained_model = train_model_from_file(temp_param_fp, save_dir)
             self.model = trained_model
+            self.labels = self._get_labels()
         self.fitted = True
+
+    def predict(self, data: TargetCollection) -> np.ndarray:
+        '''
+        Given the data to predict with return a matrix of shape 
+        [n_samples, n_classes] where the predict class will be one and all 
+        others 0.
+
+        To get the class label for these predictions use the `labels` attribute.
+        The index of the predicted class is associated to the index within the 
+        `labels` attribute.
+
+        :param data: Data to predict on.
+        :returns: A matrix of shape [n_samples, n_classes]
+        '''
+        no_model_error = 'There is no model to make predictions, either fit '\
+                         'or load a model.'
+        assert self.model, no_model_error
+                           
+        reader_params = Params.from_file(self._param_fp).get("dataset_reader")
+        dataset_reader = DatasetReader.from_params(reader_params)
+        predictor = TargetPredictor(self.model, dataset_reader)
+        
+        json_data = data.data_dict()
+        predictions = predictor.predict_batch_json(json_data)
+
+        n_samples = len(json_data)
+        n_classes = len(self.labels)
+        predictions_matrix = np.zeros((n_samples, n_classes))
+        for index, prediction in enumerate(predictions):
+            class_probabilities = prediction['class_probabilities']
+            class_label = np.argmax(class_probabilities)
+            predictions_matrix[index][class_label] = 1
+        return predictions_matrix
+        
 
     def load(self, cuda_device: int = -1) -> Model:
         '''
@@ -95,10 +134,24 @@ class AllenNLPModel():
         save_dir_err = 'Save directory was not set in the constructor of the class'
         assert self.save_dir, save_dir_err
         if self.save_dir.exists():
-            return load_archive(self.save_dir / "model.tar.gz", 
-                                cuda_device=cuda_device)
+            archive = load_archive(self.save_dir / "model.tar.gz", 
+                                   cuda_device=cuda_device)
+            self.model = archive.model
+            self.labels = self._get_labels()
+            return self.model
         raise FileNotFoundError('There is nothing at the save dir:\n'
                                 f'{self.save_dir.resolve()}')
+
+    def _get_labels(self) -> List[Any]:
+        '''
+        Will return all the possible class labels that the model attribute 
+        can generate.
+
+        :returns: List of possible labels the model can generate
+        '''
+        vocab = self.model.vocab
+        label_dict = vocab.get_index_to_token_vocabulary('labels')
+        return [label_dict[i] for i in range(len(label_dict))]
         
     @staticmethod
     def _data_to_json(data: TargetCollection, file_path: Path) -> None:
@@ -136,7 +189,7 @@ class AllenNLPModel():
                    fields removed if they exisited.
         '''
 
-        model_param_fp = str(model_param_fp.resolve())
+        model_param_fp = str(model_param_fp)
         fields_to_remove = ['train_data_path', 'validation_data_path', 
                             'test_data_path', 'evaluate_on_test']
         model_params = Params.from_file(model_param_fp)
