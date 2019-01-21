@@ -46,20 +46,46 @@ class TestAllenNLPModel():
         model.fitted = True
         assert model.fitted
 
-    @flaky
+    @flaky(max_runs=5)
+    @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
+                                               SAVED_TARGET_MODEL),
+                                              (MODEL_TDLSTM_FP, 
+                                               SAVED_TDLSTM_MODEL)])
+    def test_probabilities(self, target_model):
+        data = self.UNSEEN_DATA
+        model_config, model_path = target_model
+        model = AllenNLPModel('ML', model_config, model_path.resolve())
+
+        model.load()
+        labels = model.labels
+        num_classes = len(labels)
+        
+        probabilities = model.probabilities(data)
+        # Ensure the probabilities are probabilites
+        assert probabilities.shape == (2, num_classes)
+        np.testing.assert_almost_equal(probabilities.sum(1), np.array([1, 1]))
+        
+        correct_predictions = ['positive', 'negative']
+        for sample_index, probability in enumerate(probabilities):
+            prediction_index = labels.index(correct_predictions[sample_index])
+            best_probability_index = np.argmax(probability)
+            assert prediction_index == best_probability_index
+            assert probability[best_probability_index] > (1/3)
+    
+
+    @flaky(max_runs=5)
     @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
                                                SAVED_TARGET_MODEL),
                                               (MODEL_TDLSTM_FP, 
                                                SAVED_TDLSTM_MODEL)])
     def test_predict(self, target_model):
         data = self.UNSEEN_DATA
-
         model_config, model_path = target_model
         model = AllenNLPModel('ML', model_config, model_path.resolve())
-        with pytest.raises(Exception):
-            model.predict(data)
+
         model.load()
         labels = model.labels
+        
         predictions = model.predict(data)
         correct_predictions = ['positive', 'negative']
         correct_predictions_matrix = np.zeros((2,3))
@@ -67,6 +93,34 @@ class TestAllenNLPModel():
             prediction_index = labels.index(correct_prediction)
             correct_predictions_matrix[sample_index][prediction_index] = 1
         assert np.array_equal(correct_predictions_matrix, predictions)
+
+    @flaky(max_runs=5)
+    @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
+                                               SAVED_TARGET_MODEL),
+                                              (MODEL_TDLSTM_FP, 
+                                               SAVED_TDLSTM_MODEL)])
+    def test_predict_iter(self, target_model):
+        data = self.UNSEEN_DATA
+        model_config, model_path = target_model
+        model = AllenNLPModel('ML', model_config, model_path.resolve())
+        
+        with pytest.raises(Exception):
+            model.predict(data)
+        model.load()
+        labels = model.labels
+        true_classes = ['positive', 'negative', 'neutral']
+        num_classes = len(true_classes)
+        assert len(labels) == num_classes
+
+        predictions = model._predict_iter(data)
+        prediction_keys = ['class_probabilities', 'label']
+        for prediction in predictions:
+            for key, value in prediction.items():
+                assert key in prediction_keys
+                if key == 'class_probabilities':
+                    assert len(value) == num_classes
+                if key == 'label':
+                    assert value in true_classes
 
     @pytest.mark.parametrize("test_data", (True, False))
     def test_fit(self, test_data):

@@ -1,4 +1,4 @@
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Generator, Dict
 import json
 import tempfile
 from pathlib import Path
@@ -85,6 +85,30 @@ class AllenNLPModel():
             self.labels = self._get_labels()
         self.fitted = True
 
+    def _predict_iter(self, data: TargetCollection
+                      ) -> Generator[Dict[str, Any], None, None]:
+        '''
+        Iterates over the predictions and yields one prediction at a time.
+
+        This is a useful wrapper as it performs the data pre-processing and 
+        assertion checks.
+
+        :param data: Data to predict on
+        :yields: A dictionary containing `class_probabilities` and `label`.
+        '''
+        no_model_error = 'There is no model to make predictions, either fit '\
+                         'or load a model.'
+        assert self.model, no_model_error
+                           
+        reader_params = Params.from_file(self._param_fp).get("dataset_reader")
+        dataset_reader = DatasetReader.from_params(reader_params)
+        predictor = TargetPredictor(self.model, dataset_reader)
+        
+        json_data = data.data_dict()
+        predictions = predictor.predict_batch_json(json_data)
+        for prediction in predictions:
+            yield prediction
+
     def predict(self, data: TargetCollection) -> np.ndarray:
         '''
         Given the data to predict with return a matrix of shape 
@@ -98,18 +122,9 @@ class AllenNLPModel():
         :param data: Data to predict on.
         :returns: A matrix of shape [n_samples, n_classes]
         '''
-        no_model_error = 'There is no model to make predictions, either fit '\
-                         'or load a model.'
-        assert self.model, no_model_error
-                           
-        reader_params = Params.from_file(self._param_fp).get("dataset_reader")
-        dataset_reader = DatasetReader.from_params(reader_params)
-        predictor = TargetPredictor(self.model, dataset_reader)
-        
-        json_data = data.data_dict()
-        predictions = predictor.predict_batch_json(json_data)
+        predictions = self._predict_iter(data)
 
-        n_samples = len(json_data)
+        n_samples = len(data)
         n_classes = len(self.labels)
         predictions_matrix = np.zeros((n_samples, n_classes))
         for index, prediction in enumerate(predictions):
@@ -117,7 +132,26 @@ class AllenNLPModel():
             class_label = np.argmax(class_probabilities)
             predictions_matrix[index][class_label] = 1
         return predictions_matrix
+
+    def probabilities(self, data: TargetCollection) -> np.ndarray:
+        '''
+        Returns the probability for each class for every sample in the data. 
+        The returned matrix is of shape [n_samples, n_classes]
+
+        :param data: Data to predict on
+        :returns: probabilities that a class is true for each class for each 
+                  sample. 
+        '''
         
+        predictions = self._predict_iter(data)
+
+        n_samples = len(data)
+        n_classes = len(self.labels)
+        probability_matrix = np.zeros((n_samples, n_classes))
+        for index, prediction in enumerate(predictions):
+            class_probabilities = prediction['class_probabilities']
+            probability_matrix[index] = class_probabilities
+        return probability_matrix
 
     def load(self, cuda_device: int = -1) -> Model:
         '''
