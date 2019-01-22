@@ -95,6 +95,27 @@ class TestAllenNLPModel():
         assert np.array_equal(correct_predictions_matrix, predictions)
 
     @flaky(max_runs=5)
+    @pytest.mark.parametrize("mapper", [None, {'positive': 1, 'neutral': 0, 
+                                               'negative': -1}])
+    @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
+                                               SAVED_TARGET_MODEL),
+                                              (MODEL_TDLSTM_FP, 
+                                               SAVED_TDLSTM_MODEL)])
+    def test_predict_label(self, target_model, mapper):
+        data = self.UNSEEN_DATA
+        model_config, model_path = target_model
+        model = AllenNLPModel('ML', model_config, model_path.resolve())
+        model.load()
+        
+        predictions = model.predict_label(data, mapper=mapper)
+        correct_predictions = ['positive', 'negative']
+        if mapper:
+            correct_predictions = [mapper[pred] for pred in correct_predictions]
+
+        correct_predictions_vector = np.array(correct_predictions)
+        assert np.array_equal(correct_predictions_vector, predictions)
+
+    @flaky(max_runs=5)
     @pytest.mark.parametrize("target_model", [(MODEL_TARGET_FP, 
                                                SAVED_TARGET_MODEL),
                                               (MODEL_TDLSTM_FP, 

@@ -133,6 +133,27 @@ class AllenNLPModel():
             predictions_matrix[index][class_label] = 1
         return predictions_matrix
 
+    def predict_label(self, data: TargetCollection, 
+                      mapper: Optional[Dict[str, Any]] = None) -> np.ndarray:
+        '''
+        Given the data to predict with return a vector of class labels.
+
+        Optionally a mapper dictionary can be given to map the class labels 
+        to a different label e.g. {'positive': 1, 'neutral': 0, 'negative': -1}.
+        
+        :param data: Data to predict on.
+        :returns: A vector of shape [n_samples]
+        '''
+        predictions = self._predict_iter(data)
+
+        predictions_list = []
+        for prediction in predictions:
+            label = prediction['label']
+            if mapper:
+                label = mapper[label]
+            predictions_list.append(label)
+        return np.array(predictions_list)
+
     def probabilities(self, data: TargetCollection) -> np.ndarray:
         '''
         Returns the probability for each class for every sample in the data. 
