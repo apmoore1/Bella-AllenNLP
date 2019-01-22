@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='bella_allen_nlp',
-      version='0.1.0',
+      version='0.1.1',
       description='Target Dependent Sentiment Analysis (TDSA) Models written in AllenNLP',
       long_description=long_description,
       long_description_content_type="text/markdown",
@@ -15,7 +15,7 @@ setup(name='bella_allen_nlp',
       author_email='andrew.p.moore94@gmail.com',
       license='MIT',
       install_requires=[
-          'bella-tdsa==0.2.6',
+          'bella-tdsa==0.2.7',
           'allennlp==0.8.1',
           'pytest>4.1.0',
           'pylint'
