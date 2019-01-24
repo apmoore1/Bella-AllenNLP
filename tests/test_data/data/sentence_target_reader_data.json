@@ -1,0 +1,3 @@
+{"text": "Word is a great program for storing and organizing files.", "sentiments": [1, 1], "targets": ["program", "Word"], "spans": [[[16, 23]], [[0, 4]]]}
+{"text": "The So called desktop Runs to badly", "sentiments": [-1], "targets": ["Runs"], "spans": [[[22, 26]]]}
+{"text": "errrr when I order I did go full scale for the noting or full trackpad I wanted something for basics of being easy to move", "sentiments": [0, 1, 0], "targets": ["noting", "move", "trackpad"], "spans": [[[47, 53]], [[118, 122]], [[62, 70]]]}
