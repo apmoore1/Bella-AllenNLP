@@ -218,7 +218,8 @@ class AttentionTargetClassifier(Model):
 
         # Encode text sequence
         encoded_text_seq = self.text_encoder(embedded_text, text_mask)
-        #
+        # This function will be of use: 
+        # from allennlp.nn.util import get_final_encoder_states
         # get the last sequence (final hidden states) of the encoded text
         #index_of_last_sequence = text_mask.sum(1) - 1
         #batch_size, seq_len = text_mask.shape
