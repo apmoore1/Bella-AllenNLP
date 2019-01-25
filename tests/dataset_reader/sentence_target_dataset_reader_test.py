@@ -23,31 +23,34 @@ class TestSentenceTargetDatasetReader():
                               "."],
                      "targets": [["program"], ["Word"]],
                      "sentiments": [sentiment_mapper[1], sentiment_mapper[1]]}
-        instance2 = {"text": ["The", "bar", "is", "very", "well", "stocked"],
-                     "target": ["bar"],
-                     "sentiment": sentiment_mapper[1]}
-        instance3 = {"text": ["Even", "after", "getting", 
-                              "pushed", "out", "by"],
-                     "target": ["Pizza"],
-                     "sentiment": sentiment_mapper[1]}
+        instance2 = {"text": ["The", "So", "called", "desktop", "Runs", "to",
+                              "badly"],
+                     "targets": [["Runs"]],
+                     "sentiments": [sentiment_mapper[-1]]}
+        instance3 = {"text": ["errrr", "when", "I", "order", "I", "did", "go",
+                              "full", "scale", "for", "the", "noting", "or",
+                              "full", "trackpad", "I", "wanted", "something",
+                              "for", "basics", "of", "being", "easy", "to",
+                              "move", "It", "."],
+                     "targets": [["noting"], ["move", "It"], ["trackpad"]],
+                     "sentiments": [sentiment_mapper[0], sentiment_mapper[1], 
+                                    sentiment_mapper[0]]}
 
         assert len(instances) == 3
         fields = instances[0].fields
         assert [t.text for t in fields["text"]] == instance1["text"]
         for index, target_field in enumerate(fields['targets']):
             assert [t.text for t in target_field] == instance1["targets"][index]
-        for index, sentiment_field in enumerate(fields['labels']):
-            assert sentiment_field.label == instance1["sentiments"][index]
-        #assert fields["label"].label == instance1["sentiment"]
-        #fields = instances[1].fields
-        #assert [t.text for t in fields["text"].tokens[:6]] == instance2["text"]
-        #assert [t.text for t in fields["target"].tokens[:1]] == instance2["target"]
-        #assert fields["label"].label == instance2["sentiment"]
-        #fields = instances[2].fields
-        #assert [t.text for t in fields["text"].tokens[:6]] == instance3["text"]
-        #assert [t.text for t in fields["target"].tokens] == instance3["target"]
-        #assert fields["label"].label == instance3["sentiment"]
-        #fields = instances[3].fields
-        #assert [t.text for t in fields["text"].tokens[:6]] == instance4["text"]
-        #assert [t.text for t in fields["target"].tokens] == instance4["target"]
-        #assert fields["label"].label == instance4["sentiment"]
+        assert fields['labels'].labels == instance1["sentiments"]
+        
+        fields = instances[1].fields
+        assert [t.text for t in fields["text"]] == instance2["text"]
+        for index, target_field in enumerate(fields['targets']):
+            assert [t.text for t in target_field] == instance2["targets"][index]
+        assert fields['labels'].labels == instance2["sentiments"]
+
+        fields = instances[2].fields
+        assert [t.text for t in fields["text"]] == instance3["text"]
+        for index, target_field in enumerate(fields['targets']):
+            assert [t.text for t in target_field] == instance3["targets"][index]
+        assert fields['labels'].labels == instance3["sentiments"]

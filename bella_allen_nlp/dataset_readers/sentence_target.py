@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Callable, Union, Dict, List
 
-from allennlp.data.fields import LabelField, TextField, ListField
+from allennlp.data.fields import SequenceLabelField, TextField, ListField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
@@ -64,9 +64,6 @@ class SentenceTargetDatasetReader(DatasetReader):
         fields = {'text': text_field, 'targets': target_fields}
         if sentiments is not None:
             # Not SequenceLabelField
-            sentiment_fields = []
-            for sentiment in sentiments:
-                sentiment_fields.append(LabelField(sentiment, 
-                                        skip_indexing=False))
-            fields['labels'] = ListField(sentiment_fields)
+            fields['labels'] = SequenceLabelField(sentiments, 
+                                                  sequence_field=target_fields)
         return Instance(fields)
