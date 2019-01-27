@@ -28,7 +28,9 @@ class AttentionMultiTargetClassifier(Model):
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
                  variational_dropout: float = 0.0,
-                 dropout: float = 0.0) -> None:
+                 dropout: float = 0.0,
+                 target_scale: bool = False,
+                 context_preserving: bool = False) -> None:
         '''
         :param vocab: vocab : A Vocabulary, required in order to compute sizes 
                               for input/output projections.
@@ -94,11 +96,17 @@ class AttentionMultiTargetClassifier(Model):
         
         self.attention_layer = BilinearMatrixAttention(text_encoder.get_output_dim(),
                                                        target_encoder.get_output_dim())
+        # Whether to concat the encoded text representation with the weighted 
+        # representation from the attention
+        self.context_preserving = context_preserving
 
         if feedforward is not None:
             output_dim = self.feedforward.get_output_dim()
         else:
-            output_dim = text_encoder.get_output_dim()
+            if self.context_preserving:
+                output_dim = (text_encoder.get_output_dim() * 2)
+            else:
+                output_dim = text_encoder.get_output_dim()
         self.label_projection = TimeDistributed(Linear(output_dim, self.num_classes))
         self.metrics = {
                 "accuracy": CategoricalAccuracy()
@@ -114,6 +122,8 @@ class AttentionMultiTargetClassifier(Model):
         self._naive_dropout = Dropout(dropout)
         self._time_naive_dropout = TimeDistributed(self._naive_dropout)
         self._time_variational_dropout = TimeDistributed(self._variational_dropout)
+
+        self.target_scale = target_scale
 
         self.loss = torch.nn.CrossEntropyLoss()
         
@@ -182,6 +192,11 @@ class AttentionMultiTargetClassifier(Model):
         attention_weights = self.attention_layer(encoded_text_seq, encoded_target)
         # Masks for the targets but not the text
         softmax_attention_weights = util.masked_softmax(attention_weights, targets_mask)
+        # This scales the weights so that the maximum is 1 rather than 1 / num targets
+        if self.target_scale:
+            num_targets_vec = targets_mask.sum(1).unsqueeze(-1).unsqueeze(-1)
+            num_targets_vec = num_targets_vec.expand_as(softmax_attention_weights)
+            softmax_attention_weights = num_targets_vec.float() * softmax_attention_weights
         # Multiply the softmax attention weights by the text sequence to get 
         # (batch size, sequence length, number targets, text encoding dim out)
         softmax_attention_weights = softmax_attention_weights.unsqueeze(-1)
@@ -189,6 +204,12 @@ class AttentionMultiTargetClassifier(Model):
         weighted_encoded_text_seq = softmax_attention_weights * weighted_encoded_text_seq 
         # (batch_size, number targets, sequence length, text encoding dim out)
         weighted_encoded_text_seq = weighted_encoded_text_seq.transpose(1,2)
+        # Concats the original encoded text representation with the weighted
+        if self.context_preserving:
+            expanded_encoded_text_seq = encoded_text_seq.unsqueeze(1)
+            expanded_encoded_text_seq = expanded_encoded_text_seq.expand_as(weighted_encoded_text_seq)
+            weighted_encoded_text_seq = torch.cat((weighted_encoded_text_seq, 
+                                                   expanded_encoded_text_seq), -1)
         # (batch_size, number targets, text encoding dim out)
         weighted_encoded_text_vec = weighted_encoded_text_seq.sum(2)
         weighted_encoded_text_vec = self._time_naive_dropout(weighted_encoded_text_vec)

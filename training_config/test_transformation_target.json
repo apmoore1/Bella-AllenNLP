@@ -1,0 +1,71 @@
+{
+    "dataset_reader": {
+      "type": "target_dataset",
+      "token_indexers": {
+        "tokens": {
+            "type": "single_id",
+            "lowercase_tokens": true
+        }
+      }
+    },
+    "train_data_path": "/home/andrew/.Bella/Datasets/Laptop Train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/Laptop Val",
+    "test_data_path": "/home/andrew/.Bella/Datasets/Laptop Test",
+    "evaluate_on_test": true,
+    "model": {
+      "type": "transformation_target_classifier",
+        "text_field_embedder": {
+          "token_embedders": {
+              "tokens": {
+                "embedding_dim": 10,
+                "trainable": true
+              }
+              
+          }
+      },
+      "text_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 10,
+        "hidden_size": 10,
+        "num_layers": 1
+      },
+      "target_encoder": {
+        "type": "lstm",
+        "bidirectional": false,
+        "input_size": 10,
+        "hidden_size": 10,
+        "num_layers": 1
+      },
+      "output_encoder": {
+        "type": "cnn",
+        "ngram_filter_sizes": [3],
+        "embedding_dim": 10,
+        "num_filters": 10
+      },
+      "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
+      "dropout": 0.3,
+      "variational_dropout": 0.3,
+      "share_text_target_encoder": false,
+      "full_dropout": false
+    },
+    "iterator": {
+        "type": "bucket",
+        "sorting_keys": [["text", "num_tokens"]],
+        "padding_noise": 0.1,
+        "batch_size": 32
+      },
+    
+    "trainer": {
+      "num_epochs": 200,
+      "patience": 20,
+      "cuda_device": 0,
+      "shuffle": true,
+      "grad_clipping": 5,
+      "optimizer": {
+          "type": "sgd",
+          "lr": 0.01,
+          "momentum": 0.9
+      }
+    }
+  }

@@ -1,0 +1,62 @@
+{
+    "dataset_reader": {
+      "type": "target_dataset",
+      "token_indexers": {
+        "tokens": {
+            "type": "single_id",
+            "lowercase_tokens": true
+        }
+      }
+    },
+    "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Val",
+    "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
+    "evaluate_on_test": true,
+    "model": {
+      "type": "transformation_target_classifier",
+        "text_field_embedder": {
+          "token_embedders": {
+              "tokens": {
+                "embedding_dim": 300,
+                "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
+                "trainable": true
+              }
+              
+          }
+      },
+      "text_encoder": {
+        "type": "lstm",
+        "bidirectional": true,
+        "input_size": 300,
+        "hidden_size": 50,
+        "num_layers": 1
+      },
+      "output_encoder": {
+        "type": "cnn",
+        "ngram_filter_sizes": [3],
+        "embedding_dim": 100,
+        "num_filters": 50
+      },
+      "num_cpt_layers": 2,
+      "cpt_highway": true,
+      "dropout": 0.3,
+      "variational_dropout": 0.3,
+      "share_text_target_encoder": true,
+      "full_dropout": false
+    },
+    "iterator": {
+        "type": "basic",
+        "batch_size": 64
+      },
+    
+    "trainer": {
+      "num_epochs": 300,
+      "patience": 10,
+      "cuda_device": 0,
+      "shuffle": true,
+      "validation_metric": "+accuracy",
+      "optimizer": {
+          "type": "adam"
+      }
+    }
+  }
