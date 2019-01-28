@@ -18,7 +18,7 @@
           "token_embedders": {
               "tokens": {
                 "embedding_dim": 300,
-                "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
+                "pretrained_file": "/home/andrew/glove.6B/glove.840B.300d.txt",
                 "trainable": true
               }
               
@@ -37,6 +37,10 @@
         "embedding_dim": 100,
         "num_filters": 50
       },
+      "initializer": [["text_field_embedder.token_embedder_tokens.weight", 
+                       {"type": "uniform", "a": -0.25, "b": 0.25}],
+                      [".*bias.*", "zero"],
+                      [".*weight.*", {"type": "uniform", "a": -0.01, "b": 0.01}]],
       "num_cpt_layers": 2,
       "cpt_highway": true,
       "dropout": 0.3,
@@ -46,13 +50,13 @@
     },
     "iterator": {
         "type": "basic",
-        "batch_size": 64
+        "batch_size": 25
       },
     
     "trainer": {
       "num_epochs": 300,
-      "patience": 10,
-      "cuda_device": 0,
+      "patience": 5,
+      "cuda_device": -1,
       "shuffle": true,
       "validation_metric": "+accuracy",
       "optimizer": {
