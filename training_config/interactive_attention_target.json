@@ -8,9 +8,9 @@
       }
     }
   },
-  "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
-  "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Val",
-  "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
+  "train_data_path": "/home/andrew/.Bella/Datasets/Laptop Train",
+  "validation_data_path": "/home/andrew/.Bella/Datasets/Laptop Val",
+  "test_data_path": "/home/andrew/.Bella/Datasets/Laptop Test",
   "evaluate_on_test": true,
   "model": {
     "type": "interactive_attention_target_classifier",
@@ -50,27 +50,25 @@
       "num_layers": 1,
       "dropout": 0.0
     },
-    "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
     "dropout": 0.5,
     "word_dropout": 0.0,
     "variational_dropout": 0.5
   },
   "iterator": {
-    "type": "bucket",
-    "sorting_keys": [["text", "num_tokens"]],
-    "padding_noise": 0.1,
+    "type": "basic",
     "batch_size": 32
   },
 
   "trainer": {
-    "num_epochs": 200,
+    "num_epochs": 300,
     "patience": 20,
     "cuda_device": 0,
     "shuffle": true,
     "optimizer": {
       "type": "sgd",
       "lr": 0.01,
-      "momentum": 0.9
+      "momentum": 0.9,
+      "weight_decay": 0.0001 
     }
   }
 }
