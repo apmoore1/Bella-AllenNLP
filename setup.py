@@ -15,7 +15,7 @@ setup(name='bella_allen_nlp',
       author_email='andrew.p.moore94@gmail.com',
       license='MIT',
       install_requires=[
-          'bella-tdsa==0.2.7',
+          'bella-tdsa==0.3.0',
           'allennlp==0.8.1',
           'pytest>4.1.0',
           'pylint'
