@@ -2,7 +2,7 @@
 A feed-forward neural network.
 """
 import torch
-from torch.nn import Linear, Dropout
+from torch.nn import Linear, Dropout, Hardtanh
 
 from allennlp.modules.attention import DotProductAttention
 
@@ -28,6 +28,7 @@ class CPT(torch.nn.Module):
         self.attention = DotProductAttention(normalize=True)
         self.num_layers = num_layers
         self._highway = highway
+        self._activation = Hardtanh()
         self._naive_dropout = Dropout(dropout)
         self._output_dim = text_encoder_out_dim
 
@@ -49,7 +50,7 @@ class CPT(torch.nn.Module):
             # Similarity between the text and the weighted target
             text_targets = torch.cat((text_vec, weighted_targets_vec), -1)
             infused_text_target = self.cpt_feedforward(text_targets)
-            infused_text_target = torch.relu(infused_text_target)
+            infused_text_target = self._activation(infused_text_target)
             infused_text_target = self._naive_dropout(infused_text_target)
             # Context preserving
             if self._highway:
