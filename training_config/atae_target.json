@@ -48,25 +48,27 @@
         "embedding_dim": 300,
         "averaged": true
       },
+      "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
       "dropout": 0.5,
       "word_dropout": 0.0,
       "variational_dropout": 0.5,
       "target_concat_text_embedding": true
     },
     "iterator": {
-        "type": "bucket",
-        "sorting_keys": [["text", "num_tokens"]],
-        "padding_noise": 0.1,
+        "type": "basic",
         "batch_size": 32
       },
     
-    "trainer": {
-      "num_epochs": 200,
-      "patience": 5,
-      "cuda_device": 0,
-      "shuffle": true,
-      "optimizer": {
-          "type": "adam"
+      "trainer": {
+        "num_epochs": 300,
+        "patience": 20,
+        "cuda_device": 0,
+        "shuffle": true,
+        "validation_metric": "+Macro_F1",
+        "optimizer": {
+            "type": "sgd",
+            "lr": 0.01,
+            "momentum": 0.9
+        }
       }
-    }
   }

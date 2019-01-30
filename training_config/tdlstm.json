@@ -1,11 +1,11 @@
 {
     "dataset_reader": {
       "type": "tdlstm_dataset",
-      "incl_target": true
+      "incl_target": false
     },
-    "train_data_path": "/home/andrew/.Bella/Datasets/Restaurant Train",
-    "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Dev",
-    "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
+    "train_data_path": "/home/andrew/.Bella/Datasets/Laptop Train",
+    "validation_data_path": "/home/andrew/.Bella/Datasets/Laptop Val",
+    "test_data_path": "/home/andrew/.Bella/Datasets/Laptop Test",
     "evaluate_on_test": true,
     "model": {
       "type": "tdlstm_classifier",
@@ -14,7 +14,7 @@
             "tokens": {
                 "type": "embedding",
                 "embedding_dim": 300,
-                "pretrained_file": "/home/andrew/glove.6B/glove.840B.300d.txt",
+                "pretrained_file": "/home/andrew/Documents/Glove Vectors/glove.840B.300d.txt",
                 "trainable": true
             }
             
@@ -34,25 +34,24 @@
         "hidden_size": 300,
         "num_layers": 1
       },
-    "dropout": 0.2,
-    "word_dropout": 0.2
+    "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
+    "dropout": 0.5
     },
     "iterator": {
-      "type": "bucket",
-      "sorting_keys": [["left_text", "num_tokens"], ["right_text", "num_tokens"]],
-      "padding_noise": 0.1,
+      "type": "basic",
       "batch_size": 32
     },
   
     "trainer": {
-      "num_epochs": 100,
-      "patience": 5,
-      "cuda_device": -1,
+      "num_epochs": 300,
+      "patience": 20,
+      "cuda_device": 0,
       "shuffle": true,
-      "grad_clipping": 5.0,
+      "validation_metric": "+Macro_F1",
       "optimizer": {
-        "type": "adam",
-        "lr": 0.001
+          "type": "sgd",
+          "lr": 0.01,
+          "momentum": 0.9
       }
     }
   }
