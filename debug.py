@@ -5,6 +5,7 @@ import sys
 from allennlp.commands import main
 
 config_file = "training_config/test_transformation_target.json"
+config_file = "debug.json"
 
 # Use overrides to train on CPU.
 overrides = json.dumps({"trainer": {"cuda_device": -1}})
