@@ -2,12 +2,13 @@ import json
 import logging
 from typing import Callable, Union, Dict, List
 
-from allennlp.data.fields import LabelField, TextField
+from allennlp.data.fields import LabelField, TextField, ArrayField
 from allennlp.data.instance import Instance
 from allennlp.data.tokenizers import Tokenizer, WordTokenizer, Token
 from allennlp.data.dataset_readers.dataset_reader import DatasetReader
 from allennlp.data.token_indexers import TokenIndexer, SingleIdTokenIndexer
 from bella.contexts import context
+import numpy as np
 from overrides import overrides
 
 
@@ -23,6 +24,9 @@ class TDLSTMDatasetReader(DatasetReader):
                  token_indexers: Dict[str, TokenIndexer] = None,
                  sentiment_mapper: Dict[int, str] = None):
         '''
+        This dataset reader can also be used in conjunction with the augmented 
+        iterator.
+
         :param incl_target: Whether to include the target word(s) in the left 
                             and right contexts. By default this is True as 
                             this is what the original TDLSTM method specified.
@@ -67,14 +71,18 @@ class TDLSTMDatasetReader(DatasetReader):
                                     inc_target=self.incl_target)[0]
                 right_text = context(target_data, 'right',
                                      inc_target=self.incl_target)[0]
+                epoch_numbers = None
+                if 'epoch_number' in target_data:
+                    epoch_numbers = list(target_data['epoch_number'])
                 sentiment = self.sentiment_mapper[target_data['sentiment']]
                 yield self.text_to_instance(left_text, right_text, target, 
-                                            sentiment)
+                                            sentiment, epoch_numbers)
     
     @overrides
     def text_to_instance(self, left_text: str, right_text: str, target: str, 
-                         sentiment: Union[int, None] = None
-                        ) -> Instance:
+                         sentiment: Union[int, None] = None,
+                         epoch_numbers: Union[List[int], None]= None
+                         ) -> Instance:
         left_tokenised_text = self._tokenizer.tokenize(left_text)
         right_tokenised_text = self._tokenizer.tokenize(right_text)
         if self.reverse_right_text:
@@ -94,6 +102,8 @@ class TDLSTMDatasetReader(DatasetReader):
 
         fields = {'left_text': left_text_field, 'right_text': right_text_field, 
                   'target': target_field}
+        if epoch_numbers is not None:
+            fields['epoch_numbers'] = ArrayField(np.array(epoch_numbers))
         if sentiment is not None:
             fields['label'] = LabelField(sentiment, skip_indexing=False)
         return Instance(fields)

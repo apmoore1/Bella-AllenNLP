@@ -5,7 +5,6 @@ from overrides import overrides
 
 from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
 from bella_allen_nlp.dataset_readers.tdlstm import TDLSTMDatasetReader
-from bella_allen_nlp.dataset_readers.augmented_target import AugmentedTargetDatasetReader
 from bella.contexts import context
 
 @Predictor.register('target-predictor')
@@ -25,8 +24,6 @@ class TargetPredictor(Predictor):
         text = json_dict["text"]
         target = json_dict["target"]
         if isinstance(self._dataset_reader, TargetDatasetReader):
-            return self._dataset_reader.text_to_instance(text, target)
-        if isinstance(self._dataset_reader, AugmentedTargetDatasetReader):
             return self._dataset_reader.text_to_instance(text, target)
         # This allows the Target and TDLSTM models to use the same predictors.
         include_target = self._dataset_reader.incl_target
