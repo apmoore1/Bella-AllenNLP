@@ -1,4 +1,3 @@
 from bella_allen_nlp.dataset_readers.target import TargetDatasetReader
 from bella_allen_nlp.dataset_readers.tdlstm import TDLSTMDatasetReader
 from bella_allen_nlp.dataset_readers.sentence_target import SentenceTargetDatasetReader
-from bella_allen_nlp.dataset_readers.augmented_target import AugmentedTargetDatasetReader
