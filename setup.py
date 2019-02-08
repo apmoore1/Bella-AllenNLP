@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 
 setup(name='bella_allen_nlp',
-      version='0.1.41',
+      version='0.1.42',
       description='Target Dependent Sentiment Analysis (TDSA) Models written in AllenNLP',
       long_description=long_description,
       long_description_content_type="text/markdown",

@@ -220,6 +220,8 @@ class AllenNLPModel():
         target_data = data.data_dict()
         with file_path.open('w+') as json_file:
             for index, data in enumerate(target_data):
+                if 'epoch_number' in data:
+                    data['epoch_number'] = list(data['epoch_number'])
                 json_encoded_data = json.dumps(data)
                 if index != 0:
                     json_encoded_data = f'\n{json_encoded_data}'
