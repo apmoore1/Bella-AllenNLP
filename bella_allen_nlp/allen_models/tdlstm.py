@@ -164,7 +164,9 @@ class TDLSTMClassifier(Model):
                 left_text: Dict[str, torch.LongTensor],
                 right_text: Dict[str, torch.LongTensor],
                 target: Dict[str, torch.LongTensor],
-                label: torch.LongTensor = None) -> Dict[str, torch.Tensor]:
+                label: torch.LongTensor = None,
+                epoch_numbers: Optional[torch.Tensor] = None
+                ) -> Dict[str, torch.Tensor]:
         '''
         The text and targets are Dictionaries as they are text fields they can 
         be represented many different ways e.g. just words or words and chars 
