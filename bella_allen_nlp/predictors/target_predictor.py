@@ -9,10 +9,6 @@ from bella.contexts import context
 
 @Predictor.register('target-predictor')
 class TargetPredictor(Predictor):
-    '''
-    predict_json return class_probabilities and the labels this is all 
-    baseed on decode.
-    '''
 
     @overrides
     def _json_to_instance(self, json_dict: JsonDict) -> Instance:

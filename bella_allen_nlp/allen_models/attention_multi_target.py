@@ -27,7 +27,6 @@ class AttentionMultiTargetClassifier(Model):
                  target_field_embedder: Optional[TextFieldEmbedder] = None,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
-                 variational_dropout: float = 0.0,
                  dropout: float = 0.0,
                  target_scale: bool = False,
                  context_preserving: bool = False) -> None:
@@ -57,31 +56,16 @@ class AttentionMultiTargetClassifier(Model):
         :param initializer: Used to initialize the model parameters.
         :param regularizer: If provided, will be used to calculate the 
                             regularization penalty during training.
-        :param variational_dropout: Dropout that is applied after a layer that 
-                                    outputs a sequence of vectors. In this case 
-                                    this is applied after the embedding layer 
-                                    and the encoding of the text. This will 
-                                    apply the same dropout mask to each 
-                                    timestep compared to standard dropout 
-                                    which would use a different dropout mask 
-                                    for each timestep. Specify here the 
-                                    probability of dropout.
-        :param dropout: Standard dropout, applied to any output vector which 
-                        is after the target encoding and the attention layer.
-                        Specify here the probability of dropout.
-        
-        This attention method does not use Bi-Linear attention rather a 
-        slightly different type. This class is all based around the following 
-        paper `Attention-based LSTM for Aspect-level Sentiment Classification 
-        <https://www.aclweb.org/anthology/D16-1058>`_. The default model here 
-        is the equivalent to the AT-LSTM within this paper. If the 
-        `target_concat_text_embedding` argument is `True` then the model becomes 
-        the ATAE-LSTM within the cited paper.
+        :param word_dropout: Dropout that is applied after the embedding of the 
+                             tokens/words. It will drop entire words with this 
+                             probabilty.
+        :param dropout: To apply dropout after each layer apart from the last 
+                        layer. All dropout that is applied to timebased data 
+                        will be `variational dropout`_ all else will be  
+                        standard dropout.
 
-        The only difference between this model and the attention based models 
-        in the paper is that the final sentence representation is `r` rather 
-        than `h* = tanh(Wpr + WxhN)` as we found this projection to not help 
-        the performance.
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
         '''
         super().__init__(vocab, regularizer)
 
@@ -118,7 +102,7 @@ class AttentionMultiTargetClassifier(Model):
             label_name = f'F1_{label_name.capitalize()}'
             self.f1_metrics[label_name] = F1Measure(label_index)
 
-        self._variational_dropout = InputVariationalDropout(variational_dropout)
+        self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
         self._time_naive_dropout = TimeDistributed(self._naive_dropout)
         self._time_variational_dropout = TimeDistributed(self._variational_dropout)

@@ -29,7 +29,6 @@ class AttentionTargetClassifier(Model):
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
                  word_dropout: float = 0.0,
-                 variational_dropout: float = 0.0,
                  dropout: float = 0.0) -> None:
         '''
         :param vocab: vocab : A Vocabulary, required in order to compute sizes 
@@ -57,35 +56,28 @@ class AttentionTargetClassifier(Model):
         :param initializer: Used to initialize the model parameters.
         :param regularizer: If provided, will be used to calculate the 
                             regularization penalty during training.
-        :param word_dropout: Dropout that is applied after the embedding layer 
-                             but before the variational_dropout. It will drop 
-                             entire word/timesteps with the specified 
-                             probability.
-        :param variational_dropout: Dropout that is applied after a layer that 
-                                    outputs a sequence of vectors. In this case 
-                                    this is applied after the embedding layer 
-                                    and the encoding of the text. This will 
-                                    apply the same dropout mask to each 
-                                    timestep compared to standard dropout 
-                                    which would use a different dropout mask 
-                                    for each timestep. Specify here the 
-                                    probability of dropout.
-        :param dropout: Standard dropout, applied to any output vector which 
-                        is after the target encoding and the attention layer.
-                        Specify here the probability of dropout.
+        :param word_dropout: Dropout that is applied after the embedding of the 
+                             tokens/words. It will drop entire words with this 
+                             probabilty.
+        :param dropout: To apply dropout after each layer apart from the last 
+                        layer. All dropout that is applied to timebased data 
+                        will be `variational dropout`_ all else will be  
+                        standard dropout.
         
-        This attention method does not use Bi-Linear attention rather a 
-        slightly different type. This class is all based around the following 
-        paper `Attention-based LSTM for Aspect-level Sentiment Classification 
+        This class is all based around the following paper `Attention-based 
+        LSTM for Aspect-level Sentiment Classification 
         <https://www.aclweb.org/anthology/D16-1058>`_. The default model here 
-        is the equivalent to the AT-LSTM within this paper. If the 
+        is the equivalent to the AT-LSTM within this paper (Figure 2). If the 
         `target_concat_text_embedding` argument is `True` then the model becomes 
-        the ATAE-LSTM within the cited paper.
+        the ATAE-LSTM within the cited paper (Figure 3).
 
         The only difference between this model and the attention based models 
         in the paper is that the final sentence representation is `r` rather 
         than `h* = tanh(Wpr + WxhN)` as we found this projection to not help 
         the performance.
+
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
         '''
         super().__init__(vocab, regularizer)
 
@@ -119,7 +111,7 @@ class AttentionTargetClassifier(Model):
             self.f1_metrics[label_name] = F1Measure(label_index)
 
         self._word_dropout = Dropout2d(word_dropout)
-        self._variational_dropout = InputVariationalDropout(variational_dropout)
+        self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
 
         self.target_concat_text_embedding = target_concat_text_embedding
@@ -202,7 +194,6 @@ class AttentionTargetClassifier(Model):
         
         # Embed text
         embedded_text = self.text_field_embedder(text)
-        #embedded_text = self._token_dropout(embedded_text)
         text_mask = util.get_text_field_mask(text)
         
         # Encoded target to be of dimension (batch, words, dim) currently
@@ -215,6 +206,8 @@ class AttentionTargetClassifier(Model):
         # If it is the ATAE method then this needs to be done for the AE part
         if self.target_concat_text_embedding:
             embedded_text = torch.cat((embedded_text, encoded_targets), -1)
+
+        
         embedded_text = self._token_dropout(embedded_text)
         embedded_text = self._variational_dropout(embedded_text)
 
@@ -240,6 +233,7 @@ class AttentionTargetClassifier(Model):
         infused_target_encoded_text = torch.tanh(infused_target_encoded_text)
         infused_target_encoded_text = self._variational_dropout(infused_target_encoded_text)
         # Attention based on a context vector which is to find the most informative 
+        # words within the sentence.
         batch_size = text_mask.shape[0]
         attention_vector = self.attention_vector.unsqueeze(0).expand(batch_size, -1)
         attention_weights = self.attention_layer(attention_vector, 

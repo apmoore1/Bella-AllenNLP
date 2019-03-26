@@ -28,15 +28,16 @@ class TransformationTargetClassifier(Model):
                  target_encoder: Optional[Seq2SeqEncoder] = None,
                  feedforward: Optional[FeedForward] = None,
                  target_field_embedder: Optional[TextFieldEmbedder] = None,
-                 attention_activation_function: Optional[str] = 'tanh',
+                 share_text_target_encoder: bool = False,
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
-                 share_text_target_encoder: bool = False,
                  word_dropout: float = 0.0,
-                 variational_dropout: float = 0.0,
-                 dropout: float = 0.0,
-                 full_dropout: bool = False) -> None:
+                 dropout: float = 0.0) -> None:
         '''
+        Useful acronyms:
+
+        CPT - Context-Preserving Transformation 
+
         :param vocab: vocab : A Vocabulary, required in order to compute sizes 
                               for input/output projections.
         :param text_field_embedder: Used to embed the text and target text if
@@ -45,6 +46,17 @@ class TransformationTargetClassifier(Model):
         :param text_encoder: Sequence Encoder that will create the 
                              representation of each token in the context 
                              sentence.
+        :param output_encoder: The encoder that takes as input the words after 
+                               they have been transformed through the CPT 
+                               layers. In the original paper this would be a 
+                               CNN.
+        :param num_cpt_layers: Number of times to perform the CPT layer to the 
+                               hidden representation of the words.
+        :param cpt_highway: highway adds the contextualised word vector (input 
+                            word representation to CPT) to the transformed word 
+                            vector (output word representation of CPT). Setting 
+                            this is the equivalent of using Lossless Forwarding 
+                            (LF) from the original paper.
         :param target_encoder: Encoder that will create the representation of 
                                target text tokens.
         :param feedforward: An optional feed forward layer to apply after
@@ -55,39 +67,28 @@ class TransformationTargetClassifier(Model):
                                       input to the target_encoder. Thus this 
                                       allows a seperate embedding for text and 
                                       target text.
-        :param attention_activation_function: The name of the activation 
-                                              function applied after the 
-                                              ``x^T W y + b`` calculation.
-                                              Activation names can be found 
-                                              `here <https://allenai.github.io/
-                                              allennlp-docs/api/allennlp.nn.
-                                              activations.html>`_. Default is 
-                                              tanh.
+        :param share_text_target_encoder: Whether or not to use the same 
+                                          encoder for the text and the target.
         :param initializer: Used to initialize the model parameters.
         :param regularizer: If provided, will be used to calculate the 
                             regularization penalty during training.
-        :param word_dropout: Dropout that is applied after the embedding layer 
-                             but before the variational_dropout. It will drop 
-                             entire word/timesteps with the specified 
-                             probability.
-        :param variational_dropout: Dropout that is applied after a layer that 
-                                    outputs a sequence of vectors. In this case 
-                                    this is applied after the embedding layer 
-                                    and the encoding of the text. This will 
-                                    apply the same dropout mask to each 
-                                    timestep compared to standard dropout 
-                                    which would use a different dropout mask 
-                                    for each timestep. Specify here the 
-                                    probability of dropout.
-        :param dropout: Standard dropout, applied to any output vector which 
-                        is after the target encoding and the attention layer.
-                        Specify here the probability of dropout.
+        :param word_dropout: Dropout that is applied after the embedding of the 
+                             tokens/words. It will drop entire words with this 
+                             probabilty.
+        :param dropout: To apply dropout after each layer apart from the last 
+                        layer. All dropout that is applied to timebased data 
+                        will be `variational dropout`_ all else will be  
+                        standard dropout.
         
-        This attention target classifier is based on the model in `Exploiting  
-        Document Knowledge for Aspect-level Sentiment Classification Ruidan 
-        <https://aclanthology.info/papers/P18-2092/p18-2092>`_ where the 
-        attention on the encoded context words are based on the encoded target 
-        vector.
+        The classifier is based on the model in `Transformation Networks for 
+        Target-Oriented Sentiment Classification 
+        <https://aclweb.org/anthology/P18-1087>`_. If the 
+        `share_text_target_encoder` is `True` and `cpt_highway` is True this 
+        model would be equivalent to the TNet-LF model within the original 
+        paper.
+
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
         '''
         super().__init__(vocab, regularizer)
 
@@ -111,13 +112,9 @@ class TransformationTargetClassifier(Model):
 
         text_enc_out = text_encoder.get_output_dim()
         target_enc_out = target_encoder.get_output_dim()
-        if full_dropout:
-            self.cpt = TimeDistributed(CPT(num_cpt_layers, text_enc_out, 
-                                           target_enc_out, cpt_highway,
-                                           dropout=dropout))
-        else:
-            self.cpt = TimeDistributed(CPT(num_cpt_layers, text_enc_out, 
-                                           target_enc_out, cpt_highway))
+        self.cpt = TimeDistributed(CPT(num_cpt_layers, text_enc_out, 
+                                        target_enc_out, cpt_highway,
+                                        dropout=dropout))
         
         self.feedforward = feedforward
 
@@ -137,9 +134,8 @@ class TransformationTargetClassifier(Model):
             self.f1_metrics[label_name] = F1Measure(label_index)
 
         self._word_dropout = Dropout2d(word_dropout)
-        self._variational_dropout = InputVariationalDropout(variational_dropout)
+        self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
-        self.full_dropout = full_dropout
 
         self.loss = torch.nn.CrossEntropyLoss()
         
@@ -200,8 +196,7 @@ class TransformationTargetClassifier(Model):
         text_mask = util.get_text_field_mask(text)
         
         encoded_text_seq = self.text_encoder(embedded_text, text_mask)
-        if self.full_dropout:
-            encoded_text_seq = self._variational_dropout(encoded_text_seq)
+        encoded_text_seq = self._variational_dropout(encoded_text_seq)
 
         # Embed target
         if self.target_field_embedder:
@@ -213,8 +208,7 @@ class TransformationTargetClassifier(Model):
         target_mask = util.get_text_field_mask(target)
         # Encode target
         encoded_target_seq = self.target_encoder(embedded_target, target_mask)
-        if self.full_dropout:
-            encoded_target_seq = self._variational_dropout(encoded_target_seq)
+        encoded_target_seq = self._variational_dropout(encoded_target_seq)
         # Need to add the dummy time element from the text for the time 
         # distributed CPT
         num_token_text = encoded_text_seq.shape[1]

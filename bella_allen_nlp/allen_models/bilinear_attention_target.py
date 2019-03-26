@@ -28,7 +28,6 @@ class BiLinearAttentionTargetClassifier(Model):
                  initializer: InitializerApplicator = InitializerApplicator(),
                  regularizer: Optional[RegularizerApplicator] = None,
                  word_dropout: float = 0.0,
-                 variational_dropout: float = 0.0,
                  dropout: float = 0.0) -> None:
         '''
         :param vocab: vocab : A Vocabulary, required in order to compute sizes 
@@ -51,7 +50,7 @@ class BiLinearAttentionTargetClassifier(Model):
                                       target text.
         :param attention_activation_function: The name of the activation 
                                               function applied after the 
-                                              ``x^T W y + b`` calculation.
+                                              ``h^T W t + b`` calculation.
                                               Activation names can be found 
                                               `here <https://allenai.github.io/
                                               allennlp-docs/api/allennlp.nn.
@@ -60,28 +59,22 @@ class BiLinearAttentionTargetClassifier(Model):
         :param initializer: Used to initialize the model parameters.
         :param regularizer: If provided, will be used to calculate the 
                             regularization penalty during training.
-        :param word_dropout: Dropout that is applied after the embedding layer 
-                             but before the variational_dropout. It will drop 
-                             entire word/timesteps with the specified 
-                             probability.
-        :param variational_dropout: Dropout that is applied after a layer that 
-                                    outputs a sequence of vectors. In this case 
-                                    this is applied after the embedding layer 
-                                    and the encoding of the text. This will 
-                                    apply the same dropout mask to each 
-                                    timestep compared to standard dropout 
-                                    which would use a different dropout mask 
-                                    for each timestep. Specify here the 
-                                    probability of dropout.
-        :param dropout: Standard dropout, applied to any output vector which 
-                        is after the target encoding and the attention layer.
-                        Specify here the probability of dropout.
+        :param word_dropout: Dropout that is applied after the embedding of the 
+                             tokens/words. It will drop entire words with this 
+                             probabilty.
+        :param dropout: To apply dropout after each layer apart from the last 
+                        layer. All dropout that is applied to timebased data 
+                        will be `variational dropout`_ all else will be  
+                        standard dropout.
         
         This attention target classifier is based on the model in `Exploiting  
         Document Knowledge for Aspect-level Sentiment Classification Ruidan 
         <https://aclanthology.info/papers/P18-2092/p18-2092>`_ where the 
         attention on the encoded context words are based on the encoded target 
         vector.
+
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
         '''
         super().__init__(vocab, regularizer)
 
@@ -113,7 +106,7 @@ class BiLinearAttentionTargetClassifier(Model):
             self.f1_metrics[label_name] = F1Measure(label_index)
 
         self._word_dropout = Dropout2d(word_dropout)
-        self._variational_dropout = InputVariationalDropout(variational_dropout)
+        self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
 
         self.loss = torch.nn.CrossEntropyLoss()

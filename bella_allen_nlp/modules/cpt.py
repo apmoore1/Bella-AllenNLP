@@ -1,6 +1,3 @@
-"""
-A feed-forward neural network.
-"""
 import torch
 from torch.nn import Linear, Dropout, Hardtanh
 
@@ -21,6 +18,13 @@ class CPT(torch.nn.Module):
         :param text_encoder_out_dim: The output dimension of the text encoder
         :param target_encoder_out_dim: The output dimension of the target 
                                        encoder
+        :param highway: highway adds the contextualised word vector (input word 
+                        representation to CPT) to the transformed word vector
+                        (output word representation of CPT). Setting this is 
+                        the equivalent of using Lossless Forwarding (LF) from 
+                        the original paper.
+        :param dropout: Wether or not to apply standard dropout to the 
+                        transformed word vector after each CPT layer.
         '''
         super().__init__()
         target_text_enc_out = target_encoder_out_dim + text_encoder_out_dim
@@ -45,7 +49,7 @@ class CPT(torch.nn.Module):
             # text token
             attention_weights = self.attention(text_vec, target_seq, target_mask)
             weighted_targets_seq = torch.mul(target_seq, 
-                                            attention_weights.unsqueeze(-1))
+                                             attention_weights.unsqueeze(-1))
             weighted_targets_vec = weighted_targets_seq.sum(1)
             # Similarity between the text and the weighted target
             text_targets = torch.cat((text_vec, weighted_targets_vec), -1)

@@ -61,6 +61,9 @@ class TargetClassifier(Model):
         then the text encoded representation is concatenated with the target 
         encoded representation and then optionaly put through the feed forward 
         layer(s).
+
+        .. _variational dropout:
+           https://papers.nips.cc/paper/6241-a-theoretically-grounded-application-of-dropout-in-recurrent-neural-networks.pdf
         '''
         super().__init__(vocab, regularizer)
 
