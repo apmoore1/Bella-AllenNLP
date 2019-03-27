@@ -13,7 +13,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
-from torch.nn.modules import Dropout, Dropout2d, Linear
+from torch.nn.modules import Dropout, Linear
+
+from bella_allen_nlp.modules.word_dropout import WordDrouput
 
 
 @Model.register("attention_target_classifier")
@@ -110,7 +112,7 @@ class AttentionTargetClassifier(Model):
             label_name = f'F1_{label_name.capitalize()}'
             self.f1_metrics[label_name] = F1Measure(label_index)
 
-        self._word_dropout = Dropout2d(word_dropout)
+        self._word_dropout = WordDrouput(word_dropout)
         self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
 
@@ -149,26 +151,6 @@ class AttentionTargetClassifier(Model):
         Intitalises the attnention vector
         '''
         torch.nn.init.uniform_(self.attention_vector, -0.01, 0.01)
-
-    def _token_dropout(self, embedded_text: torch.FloatTensor
-                      ) -> torch.FloatTensor:
-        '''
-        Dropout will randomly drop whole words.
-
-        This is equivalent to `1D Spatial Dropout`_. 
-        
-        .. _1D Spatial 
-           Dropout:https://keras.io/layers/core/#spatialdropout1d 
-
-        :param embedded_text: A tensor of shape: 
-                              [batch_size, timestep, embedding_dim] of which 
-                              the dropout will drop entire timestep which is 
-                              the equivalent to words.
-        :returns: The given tensor but with timesteps/words dropped.
-        '''
-        embedded_text = embedded_text.unsqueeze(2)
-        embedded_text = self._word_dropout(embedded_text)
-        return embedded_text.squeeze(2)
         
     def forward(self,
                 text: Dict[str, torch.LongTensor],
@@ -187,7 +169,7 @@ class AttentionTargetClassifier(Model):
             embedded_target = self.target_field_embedder(target)
         else:
             embedded_target = self.text_field_embedder(target)
-        embedded_target = self._token_dropout(embedded_target)
+        embedded_target = self._word_dropout(embedded_target)
         embedded_target = self._variational_dropout(embedded_target)
         target_mask = util.get_text_field_mask(target)
         encoded_target = self.target_encoder(embedded_target, target_mask)
@@ -208,7 +190,7 @@ class AttentionTargetClassifier(Model):
             embedded_text = torch.cat((embedded_text, encoded_targets), -1)
 
         
-        embedded_text = self._token_dropout(embedded_text)
+        embedded_text = self._word_dropout(embedded_text)
         embedded_text = self._variational_dropout(embedded_text)
 
         # Encode text sequence

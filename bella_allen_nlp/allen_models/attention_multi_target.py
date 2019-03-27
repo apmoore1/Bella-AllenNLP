@@ -13,7 +13,9 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
-from torch.nn.modules import Dropout, Dropout2d, Linear
+from torch.nn.modules import Dropout, Linear
+
+from bella_allen_nlp.modules.word_dropout import WordDrouput
 
 
 @Model.register("attention_multi_target_classifier")

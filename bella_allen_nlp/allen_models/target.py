@@ -11,7 +11,9 @@ from allennlp.training.metrics import CategoricalAccuracy, F1Measure
 import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.nn.modules import Dropout, Dropout2d, Linear
+from torch.nn.modules import Dropout, Linear
+
+from bella_allen_nlp.modules.word_dropout import WordDrouput
 
 
 @Model.register("target_classifier")
@@ -93,7 +95,7 @@ class TargetClassifier(Model):
             label_name = f'F1_{label_name.capitalize()}'
             self.f1_metrics[label_name] = F1Measure(label_index)
 
-        self._word_dropout = Dropout2d(word_dropout)
+        self._word_dropout = WordDrouput(word_dropout)
         self._variational_dropout = InputVariationalDropout(dropout)
         self._naive_dropout = Dropout(dropout)
 
@@ -116,26 +118,6 @@ class TargetClassifier(Model):
                                    target_encoder.get_input_dim(),
                                    target_field_error, "target encoder input dim")
         initializer(self)
-
-    def _token_dropout(self, embedded_text: torch.FloatTensor
-                      ) -> torch.FloatTensor:
-        '''
-        Dropout will randomly drop whole words.
-
-        This is equivalent to `1D Spatial Dropout`_. 
-        
-        .. _1D Spatial 
-           Dropout:https://keras.io/layers/core/#spatialdropout1d 
-
-        :param embedded_text: A tensor of shape: 
-                              [batch_size, timestep, embedding_dim] of which 
-                              the dropout will drop entire timestep which is 
-                              the equivalent to words.
-        :returns: The given tensor but with timesteps/words dropped.
-        '''
-        embedded_text = embedded_text.unsqueeze(2)
-        embedded_text = self._word_dropout(embedded_text)
-        return embedded_text.squeeze(2)
         
     def forward(self,
                 text: Dict[str, torch.LongTensor],
@@ -150,7 +132,7 @@ class TargetClassifier(Model):
         {'words': words_tensor_ids, 'chars': char_tensor_ids}
         '''
         embedded_text = self.text_field_embedder(text)
-        embedded_text = self._token_dropout(embedded_text)
+        embedded_text = self._word_dropout(embedded_text)
         text_mask = util.get_text_field_mask(text)
 
         embedded_text = self._variational_dropout(embedded_text)
@@ -162,7 +144,7 @@ class TargetClassifier(Model):
                 embedded_target = self.target_field_embedder(target)
             else:
                 embedded_target = self.text_field_embedder(target)
-            embedded_target = self._token_dropout(embedded_target)
+            embedded_target = self._word_dropout(embedded_target)
             embedded_target = self._variational_dropout(embedded_target)
             target_mask = util.get_text_field_mask(target)
 
