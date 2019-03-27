@@ -99,6 +99,7 @@ class AllenNLPModel():
         no_model_error = 'There is no model to make predictions, either fit '\
                          'or load a model.'
         assert self.model, no_model_error
+        self.model.eval()
                            
         reader_params = Params.from_file(self._param_fp).get("dataset_reader")
         dataset_reader = DatasetReader.from_params(reader_params)
