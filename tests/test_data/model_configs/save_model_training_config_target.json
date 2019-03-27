@@ -1,0 +1,71 @@
+{
+    "dataset_reader": {
+        "type": "target_dataset",
+        "token_indexers": {
+            "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+            }
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "batch_size": 32,
+        "padding_noise": 0.1,
+        "sorting_keys": [
+            [
+                "text",
+                "num_tokens"
+            ]
+        ]
+    },
+    "model": {
+        "type": "attention_target_classifier",
+        "dropout": 0.5,
+        "target_concat_text_embedding": true,
+        "target_encoder": {
+            "type": "boe",
+            "averaged": true,
+            "embedding_dim": 50
+        },
+        "target_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 50,
+                    "trainable": true
+                }
+            }
+        },
+        "text_encoder": {
+            "type": "lstm",
+            "bidirectional": false,
+            "hidden_size": 100,
+            "input_size": 100,
+            "num_layers": 1
+        },
+        "text_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 50,
+                    "trainable": true
+                }
+            }
+        },
+        "word_dropout": 0
+    },
+    "train_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Train",
+    "validation_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Val",
+    "test_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Test",
+    "trainer": {
+        "cuda_device": -1,
+        "num_epochs": 200,
+        "optimizer": {
+            "type": "adam"
+        },
+        "patience": 5,
+        "shuffle": true
+    },
+    "evaluate_on_test": true
+}

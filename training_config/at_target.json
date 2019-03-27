@@ -48,7 +48,6 @@
       },
       "dropout": 0.5,
       "word_dropout": 0.0,
-      "variational_dropout": 0.5,
       "target_concat_text_embedding": false
     },
     "iterator": {

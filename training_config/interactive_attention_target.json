@@ -1,6 +1,6 @@
 {
   "dataset_reader": {
-    "type": "augmented_target_dataset",
+    "type": "target_dataset",
     "token_indexers": {
       "tokens": {
           "type": "single_id",
@@ -8,7 +8,7 @@
       }
     }
   },
-  "train_data_path": "/home/andrew/.Bella/Datasets/embedding_label.json",
+  "train_data_path": "/home/andrew/Desktop/augmentation data/sentence/Restaurant/3/random/data0.json",
   "validation_data_path": "/home/andrew/.Bella/Datasets/Restaurant Val",
   "test_data_path": "/home/andrew/.Bella/Datasets/Restaurant Test",
   "evaluate_on_test": true,
@@ -52,8 +52,7 @@
     },
     "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
     "dropout": 0.5,
-    "word_dropout": 0.0,
-    "variational_dropout": 0.5
+    "word_dropout": 0.0
   },
   "iterator": {
     "type": "augmented",

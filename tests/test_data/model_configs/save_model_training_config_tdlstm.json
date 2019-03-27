@@ -1,0 +1,67 @@
+{
+    "dataset_reader": {
+        "type": "tdlstm_dataset",
+        "incl_target": true,
+        "token_indexers": {
+            "tokens": {
+                "type": "single_id",
+                "lowercase_tokens": true
+            }
+        }
+    },
+    "iterator": {
+        "type": "bucket",
+        "batch_size": 32,
+        "padding_noise": 0.1,
+        "sorting_keys": [
+            [
+                "left_text",
+                "num_tokens"
+            ],
+            [
+                "right_text",
+                "num_tokens"
+            ]
+        ]
+    },
+    "model": {
+        "type": "tdlstm_classifier",
+        "dropout": 0.5,
+        "left_text_encoder": {
+            "type": "lstm",
+            "bidirectional": false,
+            "hidden_size": 50,
+            "input_size": 50,
+            "num_layers": 1
+        },
+        "right_text_encoder": {
+            "type": "lstm",
+            "bidirectional": false,
+            "hidden_size": 50,
+            "input_size": 50,
+            "num_layers": 1
+        },
+        "text_field_embedder": {
+            "token_embedders": {
+                "tokens": {
+                    "type": "embedding",
+                    "embedding_dim": 50,
+                    "trainable": true
+                }
+            }
+        }
+    },
+    "train_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Train",
+    "validation_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Val",
+    "test_data_path": "/home/andrew/TDSA-Augmentation/data/splits/Restaurant Test",
+    "trainer": {
+        "cuda_device": -1,
+        "num_epochs": 100,
+        "optimizer": {
+            "type": "adam"
+        },
+        "patience": 5,
+        "shuffle": true
+    },
+    "evaluate_on_test": true
+}

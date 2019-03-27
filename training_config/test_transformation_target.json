@@ -45,7 +45,6 @@
       },
       "regularizer": [[".*", {"type": "l2", "alpha": 0.0001}]],
       "dropout": 0.3,
-      "variational_dropout": 0.3,
       "share_text_target_encoder": false,
       "full_dropout": false
     },
