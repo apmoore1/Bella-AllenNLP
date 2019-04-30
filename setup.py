@@ -16,7 +16,7 @@ setup(name='bella_allen_nlp',
       license='MIT',
       install_requires=[
           'bella-tdsa>=0.3.1',
-          'allennlp==0.8.1',
+          'allennlp==0.8.3',
           'pytest>4.1.0',
           'pylint'
       ],
