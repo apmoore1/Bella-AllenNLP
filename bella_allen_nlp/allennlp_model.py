@@ -6,6 +6,7 @@ import random
 
 from allennlp.common.params import Params
 from allennlp.commands.train import train_model_from_file
+from allennlp.commands.find_learning_rate import find_learning_rate_model
 from allennlp.data.dataset_readers import DatasetReader
 from allennlp.data.vocabulary import Vocabulary
 from allennlp.models import Model
@@ -197,6 +198,34 @@ class AllenNLPModel():
             return self.model
         raise FileNotFoundError('There is nothing at the save dir:\n'
                                 f'{self.save_dir.resolve()}')
+
+    def find_learning_rate(self, train_data: TargetCollection,
+                           results_dir: Path, 
+                           find_lr_kwargs: Optional[Dict[str, Any]] = None
+                           ) -> None:
+        '''
+        Given the training data it will plot learning rate against loss to allow 
+        you to find the best learning rate.
+
+        This is just a wrapper around 
+        allennlp.commands.find_learning_rate.find_learning_rate_model method.
+
+        :param train_data: Training data.
+        :param results_dir: Directory to store the results of the learning rate
+                            findings.
+        :param find_lr_kwargs: Dictionary of keyword arguments to give to the 
+                               allennlp.commands.find_learning_rate.find_learning_rate_model
+                               method.
+        '''
+        model_params = self._preprocess_and_load_param_file(self._param_fp)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            train_fp = Path(temp_dir, 'train_data.json')
+            self._data_to_json(train_data, train_fp)
+            model_params['train_data_path'] = str(train_fp.resolve())
+            if find_lr_kwargs is None:
+                find_learning_rate_model(model_params, results_dir)
+            else:
+                find_learning_rate_model(model_params, results_dir, **find_lr_kwargs)
 
     def _get_labels(self) -> List[Any]:
         '''
