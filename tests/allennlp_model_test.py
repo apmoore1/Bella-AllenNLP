@@ -135,6 +135,7 @@ class TestAllenNLPModel():
 
         predictions = model._predict_iter(data)
         prediction_keys = ['class_probabilities', 'label']
+        prediction_results = []
         for prediction in predictions:
             for key, value in prediction.items():
                 assert key in prediction_keys
@@ -142,6 +143,14 @@ class TestAllenNLPModel():
                     assert len(value) == num_classes
                 if key == 'label':
                     assert value in true_classes
+            prediction_results.append(prediction)
+        print('----------------')
+        print(len(prediction_results))
+        print(prediction_results)
+        print(len(data))
+        print(data)
+        print('----------------')
+        assert len(prediction_results) == len(data)
 
     @pytest.mark.parametrize("test_data", (True, False))
     def test_fit(self, test_data):

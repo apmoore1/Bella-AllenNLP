@@ -101,15 +101,27 @@ class AllenNLPModel():
                          'or load a model.'
         assert self.model, no_model_error
         self.model.eval()
-                           
-        reader_params = Params.from_file(self._param_fp).get("dataset_reader")
+
+        all_model_params = Params.from_file(self._param_fp)
+
+        reader_params = all_model_params.get("dataset_reader")
         dataset_reader = DatasetReader.from_params(reader_params)
         predictor = TargetPredictor(self.model, dataset_reader)
+
+        batch_size = 64
+        if 'iterator' in all_model_params:
+            iter_params = all_model_params.get("iterator")
+            if 'batch_size' in iter_params:
+                batch_size = iter_params['batch_size']
         
         json_data = data.data_dict()
-        predictions = predictor.predict_batch_json(json_data)
-        for prediction in predictions:
-            yield prediction
+        # Reference
+        # https://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks
+        for i in range(0, len(json_data), batch_size):
+            json_data_batch = json_data[i:i + batch_size]
+            predictions = predictor.predict_batch_json(json_data_batch)
+            for prediction in predictions:
+                yield prediction
 
     def predict(self, data: TargetCollection) -> np.ndarray:
         '''
